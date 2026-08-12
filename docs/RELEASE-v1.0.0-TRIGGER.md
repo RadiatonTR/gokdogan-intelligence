@@ -2,18 +2,21 @@
 
 Bu dosya ilk resmî `v1.0.0` Windows release workflow'unu tetiklemek için kullanılır.
 
-## Deneme 2
+## Deneme 3
 
-İlk GitHub-hosted Windows denemesi, release-cleanliness kontrolü başarılı olmasına rağmen Windows konsolunun `cp1252` encoding'i Türkçe `ğ` karakterini yazdıramadığı için `UnicodeEncodeError` ile durdu.
+Önceki iki GitHub-hosted Windows denemesinde yayın zincirinin kendisine ait iki CI ortam sorunu tespit edilip giderildi:
 
-İkinci denemede:
+1. Windows konsol encoding'i UTF-8'e zorlandı.
+2. Release testleri için `pytest` dahil backend geliştirme/test bağımlılıkları repo'nun kilitli `uv` ortamından kurulacak şekilde düzenlendi.
+
+Bu denemede:
 
 - `PYTHONUTF8=1`
 - `PYTHONIOENCODING=utf-8`
-- `actions/checkout@v7`
-- `actions/setup-node@v7`
-- `actions/setup-python@v7`
-- `actions/upload-artifact@v7`
+- `astral-sh/setup-uv@v7`
+- `uv sync --frozen --group dev`
+- `uv run pytest ...`
+- Node 24 tabanlı güncel GitHub Actions v7
 
 kullanılır.
 
