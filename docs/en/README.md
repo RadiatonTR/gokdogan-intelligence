@@ -10,6 +10,7 @@ This directory is the English documentation entry point for global users and con
 - [Data Sources and API Guide](DATA-SOURCES-AND-API.md)
 - [Troubleshooting](TROUBLESHOOTING.md)
 - [Legal Notice and Responsible Use](RESPONSIBLE-USE-AND-LEGAL.md)
+- [Windows Authenticode Code Signing](WINDOWS-CODE-SIGNING.md)
 - [Contributing](../../CONTRIBUTING.en.md)
 - [Security Policy](../../SECURITY.en.md)
 - [Support / Sponsorship](../../SUPPORT.en.md)
