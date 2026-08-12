@@ -44,7 +44,7 @@ def test_v1_github_assets_and_hygiene_exist():
     assert (ROOT / ".gitignore").exists()
     assert (ROOT / ".gitattributes").exists()
     assert (ROOT / "docs/screenshots/01-bolgesel-operasyon-haritasi.png").exists()
-    assert (ROOT / "docs/screenshots/02-canli-operasyon-kontrolleri.png").exists()
+    assert (ROOT / "docs/screenshots/02-kuresel-operasyon-gorunumu.png").exists()
     workflow = (ROOT / ".github/workflows/desktop-release.yml").read_text(encoding="utf-8")
     assert '- "v*"' in workflow
     assert "gokdogan-intelligence-windows" in workflow
