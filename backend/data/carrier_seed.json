@@ -1,0 +1,120 @@
+{
+  "_meta": {
+    "as_of": "2026-03-09",
+    "source": "USNI News Fleet & Marine Tracker",
+    "source_url": "https://news.usni.org/2026/03/09/usni-news-fleet-and-marine-tracker-march-9-2026",
+    "note": "One-shot bootstrap for first-run carrier positions. Once carrier_cache.json exists in the runtime data volume, this seed file is never read again. All subsequent updates come from GDELT (and any future sources) and are written to carrier_cache.json. A year from now, your runtime cache reflects whatever your install has observed since first launch — not these snapshot positions."
+  },
+  "carriers": {
+    "CVN-68": {
+      "lat": 47.5535,
+      "lng": -122.6400,
+      "heading": 90,
+      "desc": "Bremerton, WA (Maintenance)",
+      "source": "USNI News Fleet & Marine Tracker (seed, as of 2026-03-09)",
+      "source_url": "https://news.usni.org/category/fleet-tracker",
+      "position_source_at": "2026-03-09T00:00:00Z",
+      "position_confidence": "seed"
+    },
+    "CVN-76": {
+      "lat": 47.5580,
+      "lng": -122.6360,
+      "heading": 90,
+      "desc": "Bremerton, WA (Decommissioning)",
+      "source": "USNI News Fleet & Marine Tracker (seed, as of 2026-03-09)",
+      "source_url": "https://news.usni.org/category/fleet-tracker",
+      "position_source_at": "2026-03-09T00:00:00Z",
+      "position_confidence": "seed"
+    },
+    "CVN-69": {
+      "lat": 36.9465,
+      "lng": -76.3265,
+      "heading": 0,
+      "desc": "Norfolk, VA (Post-deployment maintenance)",
+      "source": "USNI News Fleet & Marine Tracker (seed, as of 2026-03-09)",
+      "source_url": "https://news.usni.org/category/fleet-tracker",
+      "position_source_at": "2026-03-09T00:00:00Z",
+      "position_confidence": "seed"
+    },
+    "CVN-78": {
+      "lat": 18.0,
+      "lng": 39.5,
+      "heading": 0,
+      "desc": "Red Sea — Operation Epic Fury (USNI Mar 9)",
+      "source": "USNI News Fleet & Marine Tracker (seed, as of 2026-03-09)",
+      "source_url": "https://news.usni.org/category/fleet-tracker",
+      "position_source_at": "2026-03-09T00:00:00Z",
+      "position_confidence": "seed"
+    },
+    "CVN-74": {
+      "lat": 36.98,
+      "lng": -76.43,
+      "heading": 0,
+      "desc": "Newport News, VA (RCOH refueling overhaul)",
+      "source": "USNI News Fleet & Marine Tracker (seed, as of 2026-03-09)",
+      "source_url": "https://news.usni.org/category/fleet-tracker",
+      "position_source_at": "2026-03-09T00:00:00Z",
+      "position_confidence": "seed"
+    },
+    "CVN-75": {
+      "lat": 36.0,
+      "lng": 15.0,
+      "heading": 0,
+      "desc": "Mediterranean Sea deployment (USNI Mar 9)",
+      "source": "USNI News Fleet & Marine Tracker (seed, as of 2026-03-09)",
+      "source_url": "https://news.usni.org/category/fleet-tracker",
+      "position_source_at": "2026-03-09T00:00:00Z",
+      "position_confidence": "seed"
+    },
+    "CVN-77": {
+      "lat": 36.5,
+      "lng": -74.0,
+      "heading": 0,
+      "desc": "Atlantic — Pre-deployment workups (USNI Mar 9)",
+      "source": "USNI News Fleet & Marine Tracker (seed, as of 2026-03-09)",
+      "source_url": "https://news.usni.org/category/fleet-tracker",
+      "position_source_at": "2026-03-09T00:00:00Z",
+      "position_confidence": "seed"
+    },
+    "CVN-70": {
+      "lat": 32.6840,
+      "lng": -117.1290,
+      "heading": 180,
+      "desc": "San Diego, CA (Homeport)",
+      "source": "USNI News Fleet & Marine Tracker (seed, as of 2026-03-09)",
+      "source_url": "https://news.usni.org/category/fleet-tracker",
+      "position_source_at": "2026-03-09T00:00:00Z",
+      "position_confidence": "seed"
+    },
+    "CVN-71": {
+      "lat": 32.6885,
+      "lng": -117.1280,
+      "heading": 180,
+      "desc": "San Diego, CA (Maintenance)",
+      "source": "USNI News Fleet & Marine Tracker (seed, as of 2026-03-09)",
+      "source_url": "https://news.usni.org/category/fleet-tracker",
+      "position_source_at": "2026-03-09T00:00:00Z",
+      "position_confidence": "seed"
+    },
+    "CVN-72": {
+      "lat": 20.0,
+      "lng": 64.0,
+      "heading": 0,
+      "desc": "Arabian Sea — Operation Epic Fury (USNI Mar 9)",
+      "source": "USNI News Fleet & Marine Tracker (seed, as of 2026-03-09)",
+      "source_url": "https://news.usni.org/category/fleet-tracker",
+      "position_source_at": "2026-03-09T00:00:00Z",
+      "position_confidence": "seed"
+    },
+    "CVN-73": {
+      "lat": 35.2830,
+      "lng": 139.6700,
+      "heading": 180,
+      "desc": "Yokosuka, Japan (Forward deployed)",
+      "source": "USNI News Fleet & Marine Tracker (seed, as of 2026-03-09)",
+      "source_url": "https://news.usni.org/category/fleet-tracker",
+      "position_source_at": "2026-03-09T00:00:00Z",
+      "position_confidence": "seed"
+    }
+  }
+}

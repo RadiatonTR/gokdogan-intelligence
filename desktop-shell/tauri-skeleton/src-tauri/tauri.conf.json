@@ -1,0 +1,56 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Gokdogan Intelligence Desktop",
+  "version": "0.10.3",
+  "identifier": "com.gokdogan.desktop",
+  "build": {
+    "frontendDist": "../../../frontend/out",
+    "devUrl": "http://127.0.0.1:3000"
+  },
+  "bundle": {
+    "active": true,
+    "createUpdaterArtifacts": false,
+    "resources": [
+      "companion-www",
+      "backend-runtime"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico",
+      "icons/icon.icns",
+      "icons/icon.png",
+      "icons/Square30x30Logo.png",
+      "icons/Square44x44Logo.png",
+      "icons/Square71x71Logo.png",
+      "icons/Square89x89Logo.png",
+      "icons/Square107x107Logo.png",
+      "icons/Square142x142Logo.png",
+      "icons/Square150x150Logo.png",
+      "icons/Square284x284Logo.png",
+      "icons/Square310x310Logo.png",
+      "icons/StoreLogo.png"
+    ],
+    "windows": {
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "https://timestamp.digicert.com"
+    }
+  },
+  "app": {
+    "windows": [],
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:* wss://127.0.0.1:* https://a.basemaps.cartocdn.com https://b.basemaps.cartocdn.com https://c.basemaps.cartocdn.com https://d.basemaps.cartocdn.com https://demotiles.maplibre.org https://server.arcgisonline.com https://gibs.earthdata.nasa.gov https://api.github.com https://github.com https://www.openstreetmap.org https://openmaptiles.org https://celestrak.org https://meshtastic.liamcottle.net; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+    },
+    "withGlobalTauri": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "",
+      "endpoints": [],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

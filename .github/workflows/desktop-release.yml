@@ -1,0 +1,100 @@
+name: Gökdoğan Windows Masaüstü Yayını
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+jobs:
+  windows-release:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    env:
+      GOKDOGAN_SOURCE_COMMIT: ${{ github.sha }}
+      GOKDOGAN_WINDOWS_CERT_PFX_B64: ${{ secrets.GOKDOGAN_WINDOWS_CERT_PFX_B64 }}
+      GOKDOGAN_WINDOWS_CERT_PASSWORD: ${{ secrets.GOKDOGAN_WINDOWS_CERT_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+            desktop-shell/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - name: Sürüm kapılarını doğrula
+        shell: pwsh
+        run: |
+          python scripts/validate_r24_release.py
+          python scripts/generate_release_attestation.py
+          python scripts/check_release_cleanliness.py
+      - name: Kaynak bağımlılıklarını doğrula
+        shell: pwsh
+        run: |
+          node scripts/validate-npm-locks.cjs
+          cargo metadata --locked --manifest-path desktop-shell/tauri-skeleton/src-tauri/Cargo.toml --format-version 1 --no-deps
+      - name: Gökdoğan sürüm sözleşme testleri
+        shell: pwsh
+        run: |
+          python -m pytest backend/tests/test_gokdogan_gd1_r4_operations.py backend/tests/test_gokdogan_v1_release_contract.py -q --tb=short
+      - name: İsteğe bağlı Authenticode sertifikasını içe aktar
+        if: env.GOKDOGAN_WINDOWS_CERT_PFX_B64 != '' && env.GOKDOGAN_WINDOWS_CERT_PASSWORD != ''
+        shell: pwsh
+        run: |
+          $pfx = Join-Path $env:RUNNER_TEMP 'gokdogan-code-signing.pfx'
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:GOKDOGAN_WINDOWS_CERT_PFX_B64))
+          $secure = ConvertTo-SecureString $env:GOKDOGAN_WINDOWS_CERT_PASSWORD -AsPlainText -Force
+          $cert = Import-PfxCertificate -FilePath $pfx -CertStoreLocation Cert:\CurrentUser\My -Password $secure -Exportable:$false
+          if (-not $cert -or -not $cert.Thumbprint) { throw 'Kod imzalama sertifikası içe aktarılamadı.' }
+          Add-Content -Path $env:GITHUB_ENV -Value "SHADOWBROKER_WINDOWS_CERT_THUMBPRINT=$($cert.Thumbprint)"
+          Add-Content -Path $env:GITHUB_ENV -Value 'SHADOWBROKER_REQUIRE_WINDOWS_SIGNATURE=1'
+          Remove-Item -LiteralPath $pfx -Force
+      - name: Masaüstü derleme
+        shell: cmd
+        env:
+          SB_NO_PAUSE: "1"
+          SHADOWBROKER_NO_FINAL_PAUSE: "1"
+          GOKDOGAN_LIVE_DATA: "false"
+        run: WINDOWS-DESKTOP-ONE-CLICK.bat
+      - name: Artifact bütünlük özeti
+        shell: pwsh
+        run: |
+          Get-ChildItem dist/windows -Recurse -File | Get-FileHash -Algorithm SHA256 | Format-Table -AutoSize | Out-File -Encoding utf8 dist/windows/SHA256-ARTIFACTS.txt
+          $installer = Get-ChildItem dist/windows -Recurse -File | Where-Object { $_.Extension -in @('.exe', '.msi') } | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+          if (-not $installer) { throw 'Attestation için Windows installer bulunamadı.' }
+          $relative = [IO.Path]::GetRelativePath($env:GITHUB_WORKSPACE, $installer.FullName).Replace('\','/')
+          Add-Content -Path $env:GITHUB_ENV -Value "GOKDOGAN_INSTALLER_PATH=$relative"
+      - name: GitHub build provenance attestation
+        uses: actions/attest@v4
+        with:
+          subject-path: ${{ env.GOKDOGAN_INSTALLER_PATH }}
+      - name: İçe aktarılan kod imzalama sertifikasını temizle
+        if: always() && env.SHADOWBROKER_WINDOWS_CERT_THUMBPRINT != ''
+        shell: pwsh
+        run: |
+          $path = "Cert:\CurrentUser\My\$env:SHADOWBROKER_WINDOWS_CERT_THUMBPRINT"
+          if (Test-Path $path) { Remove-Item -LiteralPath $path -Force }
+      - name: Windows artifact'lerini yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: gokdogan-intelligence-windows
+          path: |
+            dist/windows/**
+            backend/data/release_attestation.json
+            release-version.json
+          if-no-files-found: error

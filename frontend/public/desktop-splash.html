@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gokdogan</title>
+  <style>
+    :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#05090d;color:#d8fff4;font-family:Segoe UI,Inter,Arial,sans-serif;overflow:hidden}
+    .wrap{height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;background:radial-gradient(circle at 50% 35%,rgba(27,196,157,.16),transparent 45%),linear-gradient(180deg,#071117,#030609)}
+    .mark{width:78px;height:78px;border:1px solid rgba(67,255,210,.55);border-radius:50%;display:grid;place-items:center;box-shadow:0 0 40px rgba(27,196,157,.17);position:relative}
+    .mark:before,.mark:after{content:"";position:absolute;background:#1bc49d}.mark:before{width:44px;height:1px}.mark:after{width:1px;height:44px}.dot{width:12px;height:12px;background:#1bc49d;border-radius:50%;box-shadow:0 0 20px #1bc49d}
+    h1{margin:24px 0 4px;font-size:25px;letter-spacing:.22em;font-weight:650}.sub{font:12px Consolas,monospace;letter-spacing:.18em;color:#71aa9e}.status{margin-top:34px;font:11px Consolas,monospace;color:#8ea7a2}
+    .bar{margin-top:10px;width:260px;height:2px;background:#13231f;overflow:hidden}.bar>span{display:block;height:100%;width:38%;background:#1bc49d;animation:load 1.4s ease-in-out infinite}
+    @keyframes load{0%{transform:translateX(-110%)}100%{transform:translateX(370%)}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="mark"><span class="dot"></span></div>
+    <h1>GOKDOGAN</h1>
+    <div class="sub">INTELLIGENCE DESKTOP</div>
+    <div class="status">INITIALIZING LOCAL INTELLIGENCE RUNTIME</div>
+    <div class="bar"><span></span></div>
+  </main>
+</body>
+</html>

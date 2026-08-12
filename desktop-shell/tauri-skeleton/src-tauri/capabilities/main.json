@@ -1,0 +1,17 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main-desktop-capability",
+  "description": "Gokdogan main-window capability. Grants the app-owned 127.0.0.1 loopback webview only the core defaults and the explicit Gokdogan native command permission set.",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    "gokdogan-main-native"
+  ],
+  "remote": {
+    "urls": [
+      "http://127.0.0.1:*/*"
+    ]
+  }
+}

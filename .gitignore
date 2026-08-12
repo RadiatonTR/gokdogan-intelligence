@@ -1,0 +1,41 @@
+# Yerel sırlar ve çalışma zamanı verileri
+.env
+.env.*
+!.env.example
+**/operator_api_keys.env
+**/*secret*.key
+**/*.pem
+**/*.pfx
+
+# Bağımlılıklar / derleme çıktıları
+node_modules/
+**/node_modules/
+dist/
+build/
+build-reports/
+**/target/
+backend/.desktop-python/
+frontend/.next/
+frontend/out/
+
+# Test / önbellek / günlük
+.pytest_cache/
+**/__pycache__/
+*.py[cod]
+*.log
+GOKDOGAN-DIAGNOSTIC.zip
+coverage/
+.nyc_output/
+
+# Yerel veritabanı ve operatör durumu
+*.db
+*.sqlite
+*.sqlite3
+backend/data/operator_handle.json
+backend/data/_domain_keys/
+
+# IDE / işletim sistemi
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

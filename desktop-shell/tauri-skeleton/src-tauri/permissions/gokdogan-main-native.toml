@@ -1,0 +1,22 @@
+[[permission]]
+identifier = "gokdogan-main-native"
+description = "Allows the Gokdogan main loopback webview to call the application's registered native desktop commands. The capability granting this permission is restricted to the main window and 127.0.0.1 loopback origins."
+commands.allow = [
+  "desktop_update_context",
+  "desktop_backend_status",
+  "desktop_open_external",
+  "desktop_local_custody_status",
+  "desktop_self_test",
+  "desktop_notify",
+  "desktop_secret_vault_status",
+  "desktop_secret_set",
+  "desktop_secret_set_many",
+  "desktop_secret_delete",
+  "invoke_local_control",
+  "get_native_audit_report",
+  "clear_native_audit_report",
+  "companion_status",
+  "companion_enable",
+  "companion_disable",
+  "companion_open_browser",
+]

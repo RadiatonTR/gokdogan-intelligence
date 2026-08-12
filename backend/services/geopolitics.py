@@ -1,0 +1,785 @@
+import os
+import requests
+import logging
+import zipfile
+import socket
+import ipaddress
+from cachetools import cached, TTLCache
+from datetime import datetime
+from urllib.parse import urljoin, urlparse
+from services.network_utils import fetch_with_curl
+
+
+
+def _geopolitics_user_agent() -> str:
+    """Round 7a: GDELT geopolitics fetcher attribution."""
+    from services.network_utils import outbound_user_agent
+    return outbound_user_agent("geopolitics-gdelt")
+
+logger = logging.getLogger(__name__)
+
+# Cache Frontline data for 30 minutes, it doesn't move that fast
+frontline_cache = TTLCache(maxsize=1, ttl=1800)
+
+_DEFAULT_DEEPSTATE_MIRROR_REPO = "cyterat/deepstate-map-data"
+
+
+def _deepstate_mirror_ref() -> tuple[str, str]:
+    """Return (github_repo_slug, git_ref) for the DeepState mirror.
+
+    When ``DEEPSTATE_MIRROR_COMMIT`` is set, ingest is pinned to that immutable
+    SHA instead of following the mutable ``main`` branch (#362).
+    """
+    repo = (os.environ.get("DEEPSTATE_MIRROR_REPO") or _DEFAULT_DEEPSTATE_MIRROR_REPO).strip()
+    if repo.count("/") != 1:
+        repo = _DEFAULT_DEEPSTATE_MIRROR_REPO
+    commit = (os.environ.get("DEEPSTATE_MIRROR_COMMIT") or "").strip()
+    ref = commit if commit else "main"
+    return repo, ref
+
+
+def _latest_deepstate_geo_path(tree_items: list) -> str | None:
+    geo_files = [
+        item["path"]
+        for item in tree_items
+        if isinstance(item, dict)
+        and str(item.get("path", "")).startswith("data/deepstatemap_data_")
+        and str(item.get("path", "")).endswith(".geojson")
+    ]
+    return sorted(geo_files)[-1] if geo_files else None
+
+
+def _annotate_deepstate_geojson(data: dict) -> dict:
+    name_map = {
+        0: "Russian-occupied areas",
+        1: "Russian advance",
+        2: "Liberated area",
+        3: "Russian-occupied areas",  # Crimea / LPR / DPR
+        4: "Directions of UA attacks",
+    }
+    if "features" in data:
+        for idx, feature in enumerate(data["features"]):
+            if "properties" not in feature or feature["properties"] is None:
+                feature["properties"] = {}
+            feature["properties"]["name"] = name_map.get(idx, "Russian-occupied areas")
+            feature["properties"]["zone_id"] = idx
+    return data
+
+
+@cached(frontline_cache)
+def fetch_ukraine_frontlines():
+    """
+    Fetches the latest GeoJSON data representing the Ukraine frontline.
+    We use the cyterat/deepstate-map-data github mirror since the public API is locked.
+    """
+    repo, ref = _deepstate_mirror_ref()
+    try:
+        logger.info("Fetching DeepStateMap from GitHub mirror (%s @ %s)...", repo, ref)
+
+        tree_url = f"https://api.github.com/repos/{repo}/git/trees/{ref}?recursive=1"
+        res_tree = requests.get(tree_url, timeout=10)
+
+        if res_tree.status_code == 200:
+            latest_file = _latest_deepstate_geo_path(res_tree.json().get("tree", []))
+            if latest_file:
+                raw_url = f"https://raw.githubusercontent.com/{repo}/{ref}/{latest_file}"
+                logger.info("Downloading DeepStateMap: %s", raw_url)
+
+                res_geo = requests.get(raw_url, timeout=20)
+                if res_geo.status_code == 200:
+                    return _annotate_deepstate_geojson(res_geo.json())
+                logger.error(
+                    "Failed to fetch parsed Github Raw GeoJSON: %s", res_geo.status_code
+                )
+            else:
+                logger.error("No deepstatemap_data_*.geojson files in mirror tree at %s", ref)
+        else:
+            logger.error(
+                "Failed to fetch Github tree for Deepstatemap (%s @ %s): %s",
+                repo,
+                ref,
+                res_tree.status_code,
+            )
+    except (requests.RequestException, ConnectionError, TimeoutError, ValueError, KeyError) as e:
+        logger.error(f"Error fetching DeepStateMap: {e}")
+    return None
+
+
+# Cache GDELT data for 6 hours - heavy aggregation, data doesn't change rapidly
+gdelt_cache = TTLCache(maxsize=1, ttl=21600)
+
+
+def _extract_domain(url):
+    """Extract a clean source name from a URL, e.g. 'nytimes.com' from 'https://www.nytimes.com/...'"""
+    try:
+        from urllib.parse import urlparse
+
+        host = urlparse(url).hostname or ""
+        # Strip www. prefix
+        if host.startswith("www."):
+            host = host[4:]
+        return host
+    except (ValueError, AttributeError, KeyError):  # non-critical
+        return url[:40]
+
+
+def _url_to_headline(url):
+    """Extract a human-readable headline from a URL path.
+    e.g. 'https://nytimes.com/2026/03/us-strikes-iran-nuclear-sites.html' -> 'Us Strikes Iran Nuclear Sites'
+    Falls back to domain name if the URL slug is gibberish (hex IDs, UUIDs, etc.).
+    """
+    import re
+
+    try:
+        from urllib.parse import urlparse, unquote
+
+        parsed = urlparse(url)
+        domain = parsed.hostname or ""
+        if domain.startswith("www."):
+            domain = domain[4:]
+
+        # Get last meaningful path segment
+        path = unquote(parsed.path).strip("/")
+        if not path:
+            return domain
+
+        # Try the last path segment first, then walk backwards
+        segments = [s for s in path.split("/") if s]
+        slug = ""
+        for seg in reversed(segments):
+            # Remove file extensions
+            for ext in [".html", ".htm", ".php", ".asp", ".aspx", ".shtml"]:
+                if seg.lower().endswith(ext):
+                    seg = seg[: -len(ext)]
+            # Skip segments that are clearly not headlines
+            if _is_gibberish(seg):
+                continue
+            slug = seg
+            break
+
+        if not slug:
+            return domain
+
+        # Remove common ID patterns at start/end
+        slug = re.sub(r"^[\d]+-", "", slug)  # leading "13847569-"
+        slug = re.sub(r"-[\da-f]{6,}$", "", slug)  # trailing hex IDs
+        slug = re.sub(r"[-_]c-\d+$", "", slug)  # trailing "-c-21803431"
+        slug = re.sub(r"^p=\d+$", "", slug)  # WordPress ?p=1234
+        # Convert slug separators to spaces
+        slug = slug.replace("-", " ").replace("_", " ")
+        slug = re.sub(r"\s+", " ", slug).strip()
+
+        # Final gibberish check after cleanup
+        if len(slug) < 8 or _is_gibberish(slug.replace(" ", "-")):
+            return domain
+
+        # Title case and truncate
+        headline = slug.title()
+        if len(headline) > 90:
+            headline = headline[:87] + "..."
+        return headline
+    except (ValueError, AttributeError, KeyError):  # non-critical
+        return url[:60]
+
+
+def _is_gibberish(text):
+    """Detect if a URL segment is gibberish (hex IDs, UUIDs, numeric IDs, etc.)
+    rather than a real human-readable slug like 'us-strikes-iran'."""
+    import re
+
+    t = text.strip()
+    if not t:
+        return True
+    # Pure numbers
+    if re.match(r"^\d+$", t):
+        return True
+    # UUID pattern (with or without dashes)
+    if re.match(
+        r"^[0-9a-f]{8}[_-]?[0-9a-f]{4}[_-]?[0-9a-f]{4}[_-]?[0-9a-f]{4}[_-]?[0-9a-f]{12}$", t, re.I
+    ):
+        return True
+    # Hex-heavy string: more than 40% hex digits among alphanumeric chars
+    alnum = re.sub(r"[^a-zA-Z0-9]", "", t)
+    if alnum:
+        hex_chars = sum(1 for c in alnum if c in "0123456789abcdefABCDEF")
+        if hex_chars / len(alnum) > 0.4 and len(alnum) > 6:
+            return True
+    # Mostly digits with a few alpha (like "article8efa6c53")
+    digits = sum(1 for c in alnum if c.isdigit())
+    if alnum and digits / len(alnum) > 0.5:
+        return True
+    # Too short to be a headline slug
+    if len(t) < 5:
+        return True
+    # Query-param style segments
+    if "=" in t:
+        return True
+    return False
+
+
+# Persistent cache for article titles — survives across GDELT cache refreshes
+# Bounded to 5000 entries with 24hr TTL to prevent unbounded memory growth
+_article_title_cache = TTLCache(maxsize=5000, ttl=86400)
+_article_snippet_cache: dict[str, str | None] = {}
+_article_url_safety_cache = TTLCache(maxsize=5000, ttl=3600)
+_TITLE_FETCH_MAX_REDIRECTS = 3
+_TITLE_FETCH_READ_BYTES = 32768
+_ALLOWED_ARTICLE_PORTS = {80, 443, 8080, 8443}
+_MAX_SNIPPET_LEN = 200
+
+
+def _hostname_resolves_public(hostname: str, port: int) -> bool:
+    try:
+        infos = socket.getaddrinfo(hostname, port, type=socket.SOCK_STREAM)
+    except (socket.gaierror, OSError):
+        return False
+
+    addresses = set()
+    for info in infos:
+        sockaddr = info[4] if len(info) > 4 else None
+        if not sockaddr:
+            continue
+        raw_addr = str(sockaddr[0] or "").split("%", 1)[0]
+        if not raw_addr:
+            continue
+        try:
+            addresses.add(ipaddress.ip_address(raw_addr))
+        except ValueError:
+            continue
+
+    return bool(addresses) and all(addr.is_global for addr in addresses)
+
+
+def _is_safe_public_article_url(url: str) -> tuple[bool, str]:
+    cached = _article_url_safety_cache.get(url)
+    if cached is not None:
+        return cached
+
+    try:
+        parsed = urlparse(str(url or "").strip())
+    except ValueError:
+        result = (False, "parse_error")
+        _article_url_safety_cache[url] = result
+        return result
+
+    scheme = str(parsed.scheme or "").lower()
+    host = str(parsed.hostname or "").strip().lower()
+    if scheme not in {"http", "https"}:
+        result = (False, "scheme")
+    elif not host:
+        result = (False, "host")
+    elif parsed.username or parsed.password:
+        result = (False, "userinfo")
+    elif host in {"localhost", "localhost.localdomain"}:
+        result = (False, "localhost")
+    else:
+        port = parsed.port or (443 if scheme == "https" else 80)
+        if port not in _ALLOWED_ARTICLE_PORTS:
+            result = (False, "port")
+        else:
+            try:
+                target_ip = ipaddress.ip_address(host.split("%", 1)[0])
+            except ValueError:
+                target_ip = None
+            if target_ip is not None:
+                result = (True, "") if target_ip.is_global else (False, "private_ip")
+            else:
+                result = (True, "") if _hostname_resolves_public(host, port) else (False, "private_dns")
+
+    _article_url_safety_cache[url] = result
+    return result
+
+
+def _extract_snippet(url: str, chunk: str) -> None:
+    """Extract og:description or meta description from an already-fetched HTML chunk."""
+    import re
+    import html as html_mod
+
+    if url in _article_snippet_cache:
+        return
+    snippet = None
+    # Try og:description first
+    for pattern in (
+        r'<meta[^>]+property=["\']og:description["\'][^>]+content=["\']([^"\'>]+)["\']',
+        r'<meta[^>]+content=["\']([^"\'>]+)["\'][^>]+property=["\']og:description["\']',
+        r'<meta[^>]+name=["\']description["\'][^>]+content=["\']([^"\'>]+)["\']',
+        r'<meta[^>]+content=["\']([^"\'>]+)["\'][^>]+name=["\']description["\']',
+    ):
+        m = re.search(pattern, chunk, re.I)
+        if m:
+            snippet = html_mod.unescape(m.group(1)).strip()
+            break
+    if snippet and len(snippet) > _MAX_SNIPPET_LEN:
+        snippet = snippet[:_MAX_SNIPPET_LEN - 3].rsplit(" ", 1)[0] + "..."
+    _article_snippet_cache[url] = snippet if snippet and len(snippet) > 15 else None
+
+
+def _fetch_article_title(url):
+    """Fetch the real headline from an article's HTML <title> or og:title tag.
+    Returns the title string, or None if it can't be fetched.
+    Uses a persistent cache to avoid refetching."""
+    if url in _article_title_cache:
+        return _article_title_cache[url]
+
+    import re
+
+    try:
+        current_url = str(url or "").strip()
+        chunk = ""
+        for _ in range(_TITLE_FETCH_MAX_REDIRECTS + 1):
+            allowed, _reason = _is_safe_public_article_url(current_url)
+            if not allowed:
+                _article_title_cache[url] = None
+                return None
+
+            resp = requests.get(
+                current_url,
+                timeout=4,
+                headers={"User-Agent": _geopolitics_user_agent()},
+                stream=True,
+                allow_redirects=False,
+            )
+            try:
+                location = str(resp.headers.get("Location") or "").strip()
+                if 300 <= resp.status_code < 400 and location:
+                    current_url = urljoin(current_url, location)
+                    continue
+                if resp.status_code != 200:
+                    _article_title_cache[url] = None
+                    return None
+                chunk = resp.raw.read(_TITLE_FETCH_READ_BYTES).decode("utf-8", errors="replace")
+                break
+            finally:
+                resp.close()
+        else:
+            _article_title_cache[url] = None
+            return None
+
+        title = None
+
+        # Try og:title first (usually the cleanest)
+        og_match = re.search(
+            r'<meta[^>]+property=["\']og:title["\'][^>]+content=["\']([^"\'>]+)["\']', chunk, re.I
+        )
+        if not og_match:
+            og_match = re.search(
+                r'<meta[^>]+content=["\']([^"\'>]+)["\'][^>]+property=["\']og:title["\']',
+                chunk,
+                re.I,
+            )
+        if og_match:
+            title = og_match.group(1).strip()
+
+        # Fall back to <title> tag
+        if not title:
+            title_match = re.search(r"<title[^>]*>([^<]+)</title>", chunk, re.I)
+            if title_match:
+                title = title_match.group(1).strip()
+
+        if title:
+            # Clean up HTML entities
+            import html as html_mod
+
+            title = html_mod.unescape(title)
+            # Remove site name suffixes like " | CNN" or " - BBC News"
+            title = re.sub(r"\s*[|\-–—]\s*[^|\-–—]{2,30}$", "", title).strip()
+            # Truncate very long titles
+            if len(title) > 120:
+                title = title[:117] + "..."
+            if len(title) > 10:
+                _article_title_cache[url] = title
+                # Also extract og:description / meta description for snippet
+                _extract_snippet(url, chunk)
+                return title
+
+        _article_title_cache[url] = None
+        return None
+    except (
+        requests.RequestException,
+        ConnectionError,
+        TimeoutError,
+        ValueError,
+        AttributeError,
+    ):  # non-critical
+        _article_title_cache[url] = None
+        return None
+
+
+def _batch_fetch_titles(urls):
+    """Fetch real article titles for a list of URLs in parallel.
+    Returns a dict of url -> title (or None if fetch failed)."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    results = {}
+    with ThreadPoolExecutor(max_workers=16) as executor:
+        futures = {executor.submit(_fetch_article_title, u): u for u in urls}
+        for future in futures:
+            url = futures[future]
+            try:
+                results[url] = future.result()
+            except Exception:  # non-critical: optional title enrichment
+                results[url] = None
+    return results
+
+
+def _parse_gdelt_export_zip(zip_bytes, conflict_codes, seen_locs, features, loc_index):
+    """Parse a single GDELT export ZIP and append conflict features.
+    loc_index maps loc_key -> index in features list for fast duplicate merging.
+    """
+    import csv, io, zipfile
+
+    try:
+        zf = zipfile.ZipFile(io.BytesIO(zip_bytes))
+        csv_name = zf.namelist()[0]
+        with zf.open(csv_name) as cf:
+            reader = csv.reader(
+                io.TextIOWrapper(cf, encoding="utf-8", errors="replace"), delimiter="\t"
+            )
+            for row in reader:
+                try:
+                    if len(row) < 61:
+                        continue
+                    event_code = row[26][:2] if len(row[26]) >= 2 else ""
+                    if event_code not in conflict_codes:
+                        continue
+                    lat = float(row[56]) if row[56] else None
+                    lng = float(row[57]) if row[57] else None
+                    if lat is None or lng is None or (lat == 0 and lng == 0):
+                        continue
+
+                    source_url = row[60].strip() if len(row) > 60 else ""
+                    location = row[52].strip() if len(row) > 52 else "Unknown"
+                    actor1 = row[6].strip() if len(row) > 6 else ""
+                    actor2 = row[16].strip() if len(row) > 16 else ""
+
+                    # Extract enrichment fields from GDELT CSV
+                    event_date = row[1].strip() if len(row) > 1 else ""
+                    full_event_code = row[26].strip() if len(row) > 26 else ""
+                    quad_class = int(row[29]) if len(row) > 29 and row[29].strip().isdigit() else 0
+                    goldstein = float(row[30]) if len(row) > 30 and row[30].strip() else 0.0
+                    num_mentions = int(row[31]) if len(row) > 31 and row[31].strip().isdigit() else 0
+                    num_sources = int(row[32]) if len(row) > 32 and row[32].strip().isdigit() else 0
+                    num_articles = int(row[33]) if len(row) > 33 and row[33].strip().isdigit() else 0
+                    avg_tone = float(row[34]) if len(row) > 34 and row[34].strip() else 0.0
+
+                    loc_key = f"{round(lat, 1)}_{round(lng, 1)}"
+                    if loc_key in seen_locs:
+                        # Merge: increment count, accumulate intensity, add source URL
+                        idx = loc_index[loc_key]
+                        feat = features[idx]
+                        props = feat["properties"]
+                        props["count"] = props.get("count", 1) + 1
+                        # Track worst Goldstein score (most negative = most intense)
+                        if goldstein < props.get("goldstein", 0):
+                            props["goldstein"] = round(goldstein, 1)
+                        # Accumulate mentions/sources for importance ranking
+                        props["num_mentions"] = props.get("num_mentions", 0) + num_mentions
+                        props["num_sources"] = props.get("num_sources", 0) + num_sources
+                        props["num_articles"] = props.get("num_articles", 0) + num_articles
+                        # Track latest date
+                        if event_date and event_date > props.get("event_date", ""):
+                            props["event_date"] = event_date
+                        # Collect actors
+                        actors = props.get("_actors_set", set())
+                        if actor1:
+                            actors.add(actor1)
+                        if actor2:
+                            actors.add(actor2)
+                        props["_actors_set"] = actors
+                        urls = props.get("_urls", [])
+                        seen_domains = props.get("_domains", set())
+                        if source_url:
+                            domain = _extract_domain(source_url)
+                            if domain not in seen_domains and len(urls) < 10:
+                                urls.append(source_url)
+                                seen_domains.add(domain)
+                                props["_urls"] = urls
+                                props["_domains"] = seen_domains
+                        continue
+                    seen_locs.add(loc_key)
+
+                    name = (
+                        location
+                        or (f"{actor1} vs {actor2}" if actor1 and actor2 else actor1)
+                        or "Unknown Incident"
+                    )
+                    domain = _extract_domain(source_url) if source_url else ""
+                    actors_set = set()
+                    if actor1:
+                        actors_set.add(actor1)
+                    if actor2:
+                        actors_set.add(actor2)
+                    loc_index[loc_key] = len(features)
+                    features.append(
+                        {
+                            "type": "Feature",
+                            "properties": {
+                                "name": name,
+                                "count": 1,
+                                "event_date": event_date,
+                                "event_code": full_event_code,
+                                "quad_class": quad_class,
+                                "goldstein": round(goldstein, 1),
+                                "num_mentions": num_mentions,
+                                "num_sources": num_sources,
+                                "num_articles": num_articles,
+                                "avg_tone": round(avg_tone, 1),
+                                "actor1": actor1,
+                                "actor2": actor2,
+                                "_actors_set": actors_set,
+                                "_urls": [source_url] if source_url else [],
+                                "_domains": {domain} if domain else set(),
+                            },
+                            "geometry": {"type": "Point", "coordinates": [lng, lat]},
+                            "_loc_key": loc_key,
+                        }
+                    )
+                except (ValueError, IndexError):
+                    continue
+    except (IOError, OSError, ValueError, KeyError, zipfile.BadZipFile) as e:
+        logger.warning(f"Failed to parse GDELT export zip: {e}")
+
+
+# GDELT's data.gdeltproject.org is a CNAME to a Google Cloud Storage
+# bucket of the same name. GCS returns the wildcard ``*.storage.googleapis.com``
+# certificate, which legitimately does NOT cover the GDELT custom domain
+# — Python's TLS verification correctly refuses it. Some networks/POPs
+# happen to route through a path where this works; many do not (notably
+# Docker Desktop's outbound NAT on local installs).
+#
+# Fix: rewrite the URL to hit GCS directly with a path-style bucket
+# reference, where the standard GCS cert is genuinely valid. Same data,
+# verified TLS, no operator-side workaround needed.
+def _gcs_direct_gdelt_url(url: str) -> str:
+    """If ``url`` points at data.gdeltproject.org, return the equivalent
+    GCS-direct URL. Otherwise return the URL unchanged."""
+    prefix = "://data.gdeltproject.org/"
+    if prefix in url:
+        return url.replace(prefix, "://storage.googleapis.com/data.gdeltproject.org/", 1)
+    return url
+
+
+def _download_gdelt_export(url):
+    """Download a single GDELT export file, return bytes or None."""
+    try:
+        res = fetch_with_curl(_gcs_direct_gdelt_url(url), timeout=15)
+        if res.status_code == 200:
+            return res.content
+    except (ConnectionError, TimeoutError, OSError):  # non-critical
+        pass
+    return None
+
+
+def _build_feature_html(features, fetched_titles=None):
+    """Build URL + headline arrays for frontend rendering.
+    Uses fetched_titles (real article titles) when available, falls back to URL slug parsing."""
+    import html as html_mod
+
+    for f in features:
+        urls = f["properties"].pop("_urls", [])
+        f["properties"].pop("_domains", None)
+        # Convert actors set to sorted list for JSON serialization
+        actors_set = f["properties"].pop("_actors_set", set())
+        if actors_set:
+            f["properties"]["actors"] = sorted(actors_set)[:6]
+        headlines = []
+        snippets = []
+        for u in urls:
+            real_title = fetched_titles.get(u) if fetched_titles else None
+            headlines.append(real_title if real_title else _url_to_headline(u))
+            snippets.append(_article_snippet_cache.get(u) or "")
+        f["properties"]["_urls_list"] = urls
+        f["properties"]["_headlines_list"] = headlines
+        f["properties"]["_snippets_list"] = snippets
+        if urls:
+            links = []
+            for u, h in zip(urls, headlines):
+                safe_url = u if u.startswith(("http://", "https://")) else "about:blank"
+                safe_h = html_mod.escape(h)
+                links.append(
+                    f'<div style="margin-bottom:6px;"><a href="{safe_url}" target="_blank" rel="noopener noreferrer">{safe_h}</a></div>'
+                )
+            f["properties"]["html"] = "".join(links)
+        else:
+            f["properties"]["html"] = html_mod.escape(f["properties"]["name"])
+        f.pop("_loc_key", None)
+
+
+def _enrich_gdelt_titles_background(features, all_article_urls):
+    """Background thread: fetch real article titles, then publish enriched COPIES.
+
+    The ``features`` handed to us were already published into
+    ``latest_data["gdelt"]`` by ``fetch_gdelt()``. Per the store's thread-safety
+    contract (see ``get_latest_data_subset_refs`` in fetchers/_store.py), HTTP
+    readers hold live references to these nested ``properties`` dicts and
+    serialize them OUTSIDE the data lock. Mutating the published dicts in place
+    here races that serialization and raises
+    ``RuntimeError: dictionary changed size during iteration``. So we enrich
+    copies and atomically swap the top-level key under the lock instead.
+    """
+    import html as html_mod
+    from services.fetchers._store import latest_data, _data_lock, _mark_fresh
+
+    try:
+        logger.info(f"[BG] Fetching real article titles for {len(all_article_urls)} URLs...")
+        fetched_titles = _batch_fetch_titles(all_article_urls)
+        fetched_count = sum(1 for v in fetched_titles.values() if v)
+        logger.info(f"[BG] Resolved {fetched_count}/{len(all_article_urls)} article titles")
+
+        # Build enriched copies — never touch the already-published objects.
+        enriched = []
+        for f in features:
+            nf = dict(f)
+            props = dict(f.get("properties", {}))
+            urls = props.get("_urls_list", [])
+            if urls:
+                headlines = []
+                snippets = []
+                for u in urls:
+                    real_title = fetched_titles.get(u)
+                    headlines.append(real_title if real_title else _url_to_headline(u))
+                    snippets.append(_article_snippet_cache.get(u) or "")
+                props["_headlines_list"] = headlines
+                props["_snippets_list"] = snippets
+                links = []
+                for u, h in zip(urls, headlines):
+                    safe_url = u if u.startswith(("http://", "https://")) else "about:blank"
+                    safe_h = html_mod.escape(h)
+                    links.append(
+                        f'<div style="margin-bottom:6px;"><a href="{safe_url}" target="_blank" rel="noopener noreferrer">{safe_h}</a></div>'
+                    )
+                props["html"] = "".join(links)
+            nf["properties"] = props
+            enriched.append(nf)
+
+        # Atomically publish — but only if a newer fetch_gdelt() hasn't already
+        # replaced the layer while we were fetching titles (identity guard).
+        published = False
+        with _data_lock:
+            if latest_data.get("gdelt") is features:
+                latest_data["gdelt"] = enriched
+                published = True
+        if published:
+            _mark_fresh("gdelt")
+            logger.info(f"[BG] GDELT title enrichment complete ({len(enriched)} features)")
+        else:
+            logger.info("[BG] GDELT layer changed under us; skipping stale enrichment swap")
+    except Exception as e:
+        logger.error(f"[BG] GDELT title enrichment failed: {e}")
+
+
+def fetch_global_military_incidents():
+    """
+    Fetches global military/conflict incidents from GDELT Events Export files.
+    Aggregates the last ~8 hours of 15-minute exports to build ~1000 incidents.
+    Returns immediately with URL-slug headlines; enriches with real titles in background.
+    """
+    import threading
+    from datetime import timedelta
+    from concurrent.futures import ThreadPoolExecutor
+
+    try:
+        logger.info("Fetching GDELT events via export CDN (multi-file)...")
+
+        # Get the latest export URL to determine current timestamp.
+        # HTTPS is used to prevent passive network observers from injecting
+        # poisoned export records into the global incident map via MITM.
+        # GDELT serves the same content over HTTPS as HTTP.
+        # Use the GCS-direct URL because data.gdeltproject.org's CNAME
+        # serves a wildcard *.storage.googleapis.com cert that legitimately
+        # doesn't cover the GDELT hostname. See _gcs_direct_gdelt_url above.
+        index_res = fetch_with_curl(
+            _gcs_direct_gdelt_url("https://data.gdeltproject.org/gdeltv2/lastupdate.txt"),
+            timeout=10,
+        )
+        if index_res.status_code != 200:
+            logger.error(f"GDELT lastupdate failed: {index_res.status_code}")
+            return []
+
+        # Extract latest export URL and its timestamp
+        latest_url = None
+        for line in index_res.text.strip().split("\n"):
+            parts = line.strip().split()
+            if len(parts) >= 3 and parts[2].endswith(".export.CSV.zip"):
+                latest_url = parts[2]
+                break
+
+        if not latest_url:
+            logger.error("Could not find GDELT export URL")
+            return []
+
+        # Extract timestamp from URL like: https://data.gdeltproject.org/gdeltv2/20260301120000.export.CSV.zip
+        # (GDELT's lastupdate.txt may still list URLs with http:// — we ignore
+        # the scheme there and reconstruct each download URL as https:// below.)
+        import re
+
+        ts_match = re.search(r"(\d{14})\.export\.CSV\.zip", latest_url)
+        if not ts_match:
+            logger.error("Could not parse GDELT export timestamp")
+            return []
+
+        latest_ts = datetime.strptime(ts_match.group(1), "%Y%m%d%H%M%S")
+
+        # Generate URLs for the last 12 hours (48 files at 15-min intervals)
+        NUM_FILES = 48
+        urls = []
+        for i in range(NUM_FILES):
+            ts = latest_ts - timedelta(minutes=15 * i)
+            fname = ts.strftime("%Y%m%d%H%M%S") + ".export.CSV.zip"
+            url = f"https://data.gdeltproject.org/gdeltv2/{fname}"
+            urls.append(url)
+
+        logger.info(f"Downloading {len(urls)} GDELT export files...")
+
+        # Download in parallel (8 threads)
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            zip_results = list(executor.map(_download_gdelt_export, urls))
+
+        successful = sum(1 for r in zip_results if r is not None)
+        logger.info(f"Downloaded {successful}/{len(urls)} GDELT exports")
+
+        # Parse all downloaded files
+        CONFLICT_CODES = {"13", "14", "15", "16", "17", "18", "19", "20"}
+        features = []
+        seen_locs = set()
+        loc_index = {}  # loc_key -> index in features
+
+        for zip_bytes in zip_results:
+            if zip_bytes:
+                _parse_gdelt_export_zip(zip_bytes, CONFLICT_CODES, seen_locs, features, loc_index)
+
+        # Collect all unique article URLs
+        all_article_urls = set()
+        for f in features:
+            for u in f["properties"].get("_urls", []):
+                if u:
+                    all_article_urls.add(u)
+
+        # Build HTML immediately with URL-slug headlines (instant, no network)
+        _build_feature_html(features)
+
+        logger.info(
+            f"GDELT parsed: {len(features)} conflict locations from {successful} files (titles enriching in background)"
+        )
+
+        # Kick off background thread to enrich with real article titles
+        # Features list is shared — background thread updates in-place
+        t = threading.Thread(
+            target=_enrich_gdelt_titles_background,
+            args=(features, all_article_urls),
+            daemon=True,
+        )
+        t.start()
+
+        return features
+
+    except (
+        requests.RequestException,
+        ConnectionError,
+        TimeoutError,
+        ValueError,
+        KeyError,
+        OSError,
+    ) as e:
+        logger.error(f"Error fetching GDELT data: {e}")
+    return []

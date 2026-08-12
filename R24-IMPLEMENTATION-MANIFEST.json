@@ -1,0 +1,19 @@
+{
+  "product": "Gokdogan Intelligence Desktop",
+  "base_version": "0.10.3",
+  "revision": "R24",
+  "title": "GD1 Final Windows / USB Release",
+  "fixes": [
+    "explicit-loopback-native-command-acl",
+    "api-vault-batch-save-enabled",
+    "external-link-native-open-enabled",
+    "infonet-native-control-enabled",
+    "live-data-defaults-and-runtime-health",
+    "clean-final-usb-distribution"
+  ],
+  "safety_defaults": {
+    "active_recon": false,
+    "host_shell": false,
+    "experimental_privacy": false
+  }
+}

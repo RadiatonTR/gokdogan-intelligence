@@ -1,0 +1,678 @@
+"""Shared in-memory data store for all fetcher modules.
+
+Central location for latest_data, source_timestamps, and the data lock.
+Every fetcher imports from here instead of maintaining its own copy.
+"""
+
+import copy
+import os
+import queue
+import threading
+import logging
+import time
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, TypedDict
+
+logger = logging.getLogger("services.data_fetcher")
+
+
+class DashboardData(TypedDict, total=False):
+    """Schema for the in-memory data store. Catches key typos at dev time."""
+
+    last_updated: Optional[str]
+    news: List[Dict[str, Any]]
+    stocks: Dict[str, Any]
+    oil: Dict[str, Any]
+    crypto: Dict[str, Any]
+    fx: Dict[str, Any]
+    metals: Dict[str, Any]
+    indices: Dict[str, Any]
+    financial: Dict[str, Any]
+    financial_source: str
+    financial_updated_at: str
+    commercial_flights: List[Dict[str, Any]]
+    private_flights: List[Dict[str, Any]]
+    private_jets: List[Dict[str, Any]]
+    flights: List[Dict[str, Any]]
+    ships: List[Dict[str, Any]]
+    military_flights: List[Dict[str, Any]]
+    tracked_flights: List[Dict[str, Any]]
+    cctv: List[Dict[str, Any]]
+    weather: Optional[Dict[str, Any]]
+    earthquakes: List[Dict[str, Any]]
+    uavs: List[Dict[str, Any]]
+    frontlines: Optional[Any]
+    gdelt: List[Dict[str, Any]]
+    liveuamap: List[Dict[str, Any]]
+    kiwisdr: List[Dict[str, Any]]
+    space_weather: Optional[Dict[str, Any]]
+    internet_outages: List[Dict[str, Any]]
+    firms_fires: List[Dict[str, Any]]
+    datacenters: List[Dict[str, Any]]
+    airports: List[Dict[str, Any]]
+    gps_jamming: List[Dict[str, Any]]
+    satellites: List[Dict[str, Any]]
+    satellite_source: str
+    satellite_analysis: Dict[str, Any]
+    prediction_markets: List[Dict[str, Any]]
+    sigint: List[Dict[str, Any]]
+    sigint_totals: Dict[str, Any]
+    mesh_channel_stats: Dict[str, Any]
+    meshtastic_map_nodes: List[Dict[str, Any]]
+    meshtastic_map_fetched_at: Optional[float]
+    weather_alerts: List[Dict[str, Any]]
+    air_quality: List[Dict[str, Any]]
+    volcanoes: List[Dict[str, Any]]
+    fishing_activity: List[Dict[str, Any]]
+    satnogs_stations: List[Dict[str, Any]]
+    satnogs_observations: List[Dict[str, Any]]
+    tinygs_satellites: List[Dict[str, Any]]
+    ukraine_alerts: List[Dict[str, Any]]
+    power_plants: List[Dict[str, Any]]
+    viirs_change_nodes: List[Dict[str, Any]]
+    fimi: Dict[str, Any]
+    psk_reporter: List[Dict[str, Any]]
+    correlations: List[Dict[str, Any]]
+    uap_sightings: List[Dict[str, Any]]
+    wastewater: List[Dict[str, Any]]
+    crowdthreat: List[Dict[str, Any]]
+    sar_scenes: List[Dict[str, Any]]
+    sar_anomalies: List[Dict[str, Any]]
+    sar_aoi_coverage: List[Dict[str, Any]]
+    road_corridor_trends: Dict[str, Any]
+    malware_threats: Dict[str, Any]
+    cyber_threats: Dict[str, Any]
+    scm_suppliers: Dict[str, Any]
+    telegram_osint: Dict[str, Any]
+    gt_risk: Dict[str, Any]
+    global_disasters: Dict[str, Any]
+    border_status: Dict[str, Any]
+
+
+# In-memory store
+latest_data: DashboardData = {
+    "last_updated": None,
+    "news": [],
+    "stocks": {},
+    "oil": {},
+    "crypto": {},
+    "fx": {},
+    "metals": {},
+    "indices": {},
+    "financial": {},
+    "financial_source": "",
+    "financial_updated_at": "",
+    "flights": [],
+    "ships": [],
+    "military_flights": [],
+    "tracked_flights": [],
+    "cctv": [],
+    "weather": None,
+    "earthquakes": [],
+    "uavs": [],
+    "frontlines": None,
+    "gdelt": [],
+    "liveuamap": [],
+    "kiwisdr": [],
+    "space_weather": None,
+    "internet_outages": [],
+    "firms_fires": [],
+    "datacenters": [],
+    "military_bases": [],
+    "prediction_markets": [],
+    "sigint": [],
+    "sigint_totals": {},
+    "mesh_channel_stats": {},
+    "meshtastic_map_nodes": [],
+    "meshtastic_map_fetched_at": None,
+    "weather_alerts": [],
+    "air_quality": [],
+    "volcanoes": [],
+    "fishing_activity": [],
+    "satnogs_stations": [],
+    "satnogs_observations": [],
+    "tinygs_satellites": [],
+    "ukraine_alerts": [],
+    "power_plants": [],
+    "viirs_change_nodes": [],
+    "fimi": {},
+    "psk_reporter": [],
+    "correlations": [],
+    "uap_sightings": [],
+    "wastewater": [],
+    "crowdthreat": [],
+    "sar_scenes": [],
+    "sar_anomalies": [],
+    "sar_aoi_coverage": [],
+    "road_corridor_trends": {"updated_at": None, "corridors": []},
+    "malware_threats": {"threats": [], "total": 0, "timestamp": None},
+    "cyber_threats": {"threats": [], "stats": {}},
+    "scm_suppliers": {"suppliers": [], "total": 0, "critical_count": 0},
+    "telegram_osint": {"posts": [], "total": 0, "geolocated": 0, "timestamp": None},
+    "global_disasters": {"events": [], "sources": {}, "updated_at": None, "total": 0},
+    "border_status": {"crossings": [], "sources": {}, "updated_at": None, "total": 0},
+    "gt_risk": {
+        "enabled": False,
+        "heatmap": {"type": "FeatureCollection", "features": []},
+        "clusters": [],
+        "processed": 0,
+        "timestamp": None,
+    },
+}
+
+# Per-source freshness timestamps
+source_timestamps = {}
+
+# Per-source health/freshness metadata (last ok/error)
+source_freshness: dict[str, dict] = {}
+
+
+# Layers that support row-level live-data deltas (P2).
+_DELTA_LAYER_KEYS: frozenset[str] = frozenset(
+    {
+        "ships",
+        "commercial_flights",
+        "military_flights",
+        "tracked_flights",
+        "private_flights",
+        "private_jets",
+    }
+)
+# Ring of (layer_version, id→item) snapshots for delta computation.
+_LAYER_ID_RING: dict[str, list[tuple[int, dict[str, Any]]]] = {}
+_LAYER_ID_RING_MAX = 4
+
+
+def entity_id_for_layer(layer: str, item: dict) -> str:
+    """Stable entity id for delta upsert/delete keys."""
+    if not isinstance(item, dict):
+        return ""
+    if layer == "ships":
+        return str(item.get("mmsi") or item.get("id") or "").strip()
+    return str(
+        item.get("icao24") or item.get("icao") or item.get("id") or item.get("hex") or ""
+    ).strip().lower()
+
+
+def _track_fingerprint(item: dict) -> tuple:
+    lng = item.get("lng")
+    if lng is None:
+        lng = item.get("lon")
+    return (
+        item.get("lat"),
+        lng,
+        item.get("heading") or item.get("hdg") or item.get("cog") or item.get("true_track"),
+        item.get("speed_knots") or item.get("sog") or item.get("spd"),
+        item.get("alt") or item.get("altitude") or item.get("alt_km"),
+    )
+
+
+def _capture_layer_id_map(layer: str, items: list) -> dict[str, Any]:
+    out: dict[str, Any] = {}
+    for item in items or []:
+        if not isinstance(item, dict):
+            continue
+        eid = entity_id_for_layer(layer, item)
+        if eid:
+            out[eid] = item
+    return out
+
+
+def _record_delta_layer_snapshot_locked(layer: str) -> None:
+    """Caller must hold ``_data_lock``."""
+    if layer not in _DELTA_LAYER_KEYS:
+        return
+    ver = _layer_versions.get(layer, 0)
+    val = latest_data.get(layer)
+    items = val if isinstance(val, list) else []
+    id_map = _capture_layer_id_map(layer, items)
+    ring = _LAYER_ID_RING.setdefault(layer, [])
+    ring.append((ver, id_map))
+    while len(ring) > _LAYER_ID_RING_MAX:
+        ring.pop(0)
+
+
+def compute_layer_row_delta(layer: str, since_version: int) -> dict[str, Any] | None:
+    """Build upsert/delete delta vs a prior layer version.
+
+    Returns ``None`` when the base version is no longer in the ring (client
+    must take a full snapshot). Returns an empty upsert/delete when unchanged.
+    """
+    if layer not in _DELTA_LAYER_KEYS:
+        return None
+    try:
+        since = int(since_version)
+    except (TypeError, ValueError):
+        return None
+
+    with _data_lock:
+        current_ver = int(_layer_versions.get(layer, 0) or 0)
+        if since == current_ver or since > current_ver:
+            return {
+                "upsert": [],
+                "delete": [],
+                "version": current_ver,
+                "unchanged": True,
+            }
+        ring = list(_LAYER_ID_RING.get(layer) or [])
+        base_map = None
+        for ver, id_map in ring:
+            if ver == since:
+                base_map = id_map
+                break
+        if base_map is None:
+            # Base version aged out of the ring — full snapshot required.
+            return None
+        if ring and ring[-1][0] == current_ver:
+            cur_map = ring[-1][1]
+        else:
+            val = latest_data.get(layer)
+            items = val if isinstance(val, list) else []
+            cur_map = _capture_layer_id_map(layer, items)
+
+    upsert: list[Any] = []
+    for eid, item in cur_map.items():
+        prev = base_map.get(eid)
+        if prev is None or _track_fingerprint(prev) != _track_fingerprint(item):
+            upsert.append(item)
+    delete = [eid for eid in base_map if eid not in cur_map]
+    return {
+        "upsert": upsert,
+        "delete": delete,
+        "version": current_ver,
+        "unchanged": not upsert and not delete,
+    }
+
+
+# Bounded, single-worker bridge into the persistent Intelligence Core.  Fetcher
+# threads only enqueue shallow snapshots; database/rule evaluation never blocks
+# live map publication.
+_legacy_intel_queue: "queue.Queue[tuple[str, list[Any]]]" = queue.Queue(maxsize=32)
+_legacy_intel_worker_lock = threading.Lock()
+_legacy_intel_worker_started = False
+
+
+def _legacy_intel_worker() -> None:
+    while True:
+        layer, items = _legacy_intel_queue.get()
+        try:
+            from services.intelligence_core import get_intelligence_core
+            get_intelligence_core().ingest_legacy_layer(layer, items)
+        except Exception as exc:
+            logger.debug("Legacy Intelligence Core bridge failed for %s: %s", layer, exc)
+        finally:
+            _legacy_intel_queue.task_done()
+
+
+def _enqueue_legacy_intelligence(layer: str, value: Any) -> None:
+    global _legacy_intel_worker_started
+    if str(os.environ.get("SB_LEGACY_INTEL_BRIDGE", "true")).strip().lower() in {"0", "false", "no", "off"}:
+        return
+    max_scan = max(100, min(int(os.environ.get("SB_LEGACY_INTEL_BRIDGE_MAX_SCAN", "10000") or 10000), 100000))
+    if isinstance(value, list):
+        snapshot = list(value[:max_scan])
+    elif isinstance(value, dict):
+        # Some legacy layers wrap their actual rows in one of these common keys.
+        nested = next((value.get(k) for k in ("items", "posts", "threats", "events", "suppliers", "corridors") if isinstance(value.get(k), list)), None)
+        snapshot = list(nested[:max_scan]) if isinstance(nested, list) else [dict(value)]
+    else:
+        return
+    if not snapshot:
+        return
+    with _legacy_intel_worker_lock:
+        if not _legacy_intel_worker_started:
+            threading.Thread(target=_legacy_intel_worker, name="sb-intel-legacy-bridge", daemon=True).start()
+            _legacy_intel_worker_started = True
+    try:
+        _legacy_intel_queue.put_nowait((layer, snapshot))
+    except queue.Full:
+        logger.debug("Legacy Intelligence Core bridge queue full; dropping %s refresh", layer)
+
+
+def _mark_fresh(*keys):
+    """Record the current UTC time for one or more data source keys."""
+    now = datetime.now(timezone.utc).isoformat()
+    global _data_version
+    changed: list[tuple[str, int, int]] = []  # (layer, version, count)
+    with _data_lock:
+        for k in keys:
+            source_timestamps[k] = now
+            _layer_versions[k] = _layer_versions.get(k, 0) + 1
+            # Grab entity count while we hold the lock (cheap len())
+            val = latest_data.get(k)
+            count = len(val) if isinstance(val, list) else (1 if val is not None else 0)
+            changed.append((k, _layer_versions[k], count))
+            _record_delta_layer_snapshot_locked(k)
+        # Publish partial fetch progress immediately so the frontend can
+        # observe newly available data without waiting for the entire tier.
+        _data_version += 1
+    # Notify SSE listeners outside the lock to avoid deadlocks
+    _notify_layer_change(changed)
+    # R7 bridges every legacy layer refresh into the unified Source Health
+    # registry. The import is intentionally lazy to avoid a fetcher/intelligence
+    # initialization cycle. Health reporting must never break data publication.
+    try:
+        from services.intelligence_core import get_intelligence_core
+        core = get_intelligence_core()
+        for layer, _version, count in changed:
+            core.sources.record_success(
+                f"legacy:{layer}",
+                f"Legacy fetcher / {layer}",
+                record_count=count,
+                metadata={"owner": "legacy-fetcher-bridge", "layer": layer},
+            )
+    except Exception:
+        pass
+    for layer, _version, _count in changed:
+        try:
+            _enqueue_legacy_intelligence(layer, latest_data.get(layer))
+        except Exception:
+            pass
+
+
+# Thread lock for safe reads/writes to latest_data
+_data_lock = threading.Lock()
+
+# Monotonic version counter — incremented on each data update cycle.
+# Used for cheap ETag generation instead of MD5-hashing the full response.
+_data_version: int = 0
+
+# Per-layer version counters — incremented only when that specific layer
+# refreshes.  Used by get_layer_slice for per-layer incremental updates
+# and by the SSE stream to push targeted layer_changed notifications.
+_layer_versions: dict[str, int] = {}
+
+
+# ---------------------------------------------------------------------------
+# Layer-change notification callbacks (thread → async SSE bridge)
+# ---------------------------------------------------------------------------
+_layer_change_callbacks: list = []
+_layer_change_callbacks_lock = threading.Lock()
+
+
+def register_layer_change_callback(callback) -> None:
+    """Register a callback invoked on every _mark_fresh().
+
+    Signature: callback(layer: str, version: int, count: int)
+    Called from fetcher threads — must be thread-safe.
+    """
+    with _layer_change_callbacks_lock:
+        _layer_change_callbacks.append(callback)
+
+
+def unregister_layer_change_callback(callback) -> None:
+    """Remove a previously registered callback."""
+    with _layer_change_callbacks_lock:
+        try:
+            _layer_change_callbacks.remove(callback)
+        except ValueError:
+            pass
+
+
+def _notify_layer_change(changed: list[tuple[str, int, int]]) -> None:
+    """Fire all registered callbacks for each changed layer."""
+    with _layer_change_callbacks_lock:
+        cbs = list(_layer_change_callbacks)
+    for cb in cbs:
+        for layer, version, count in changed:
+            try:
+                cb(layer, version, count)
+            except Exception:
+                pass
+
+
+def mark_source_failure(layer: str, error: object, *, state: str = "error") -> None:
+    """Bridge a legacy fetch failure into Intelligence Core health telemetry.
+
+    Fetchers can adopt this helper without depending on Intelligence Core at
+    import time. It is deliberately best-effort so observability cannot turn a
+    recoverable upstream failure into an application failure.
+    """
+    try:
+        from services.intelligence_core import get_intelligence_core
+        from services.intelligence_core.models import SourceState
+        mapped = SourceState(state) if state in {x.value for x in SourceState} else SourceState.ERROR
+        get_intelligence_core().sources.record_failure(
+            f"legacy:{layer}", f"Legacy fetcher / {layer}", str(error)[:1000], state=mapped,
+            metadata={"owner": "legacy-fetcher-bridge", "layer": layer},
+        )
+    except Exception:
+        pass
+
+
+def get_layer_versions() -> dict[str, int]:
+    """Return a snapshot of all per-layer version counters."""
+    with _data_lock:
+        return dict(_layer_versions)
+
+
+def get_layer_version(layer: str) -> int:
+    """Return the version counter for a single layer (0 if never refreshed)."""
+    with _data_lock:
+        return _layer_versions.get(layer, 0)
+
+
+def bump_data_version() -> None:
+    """Increment the data version counter after a fetch cycle completes."""
+    global _data_version
+    with _data_lock:
+        _data_version += 1
+
+
+def get_data_version() -> int:
+    """Return the current data version (for ETag generation)."""
+    with _data_lock:
+        return _data_version
+
+
+_active_layers_version: int = 0
+
+
+def bump_active_layers_version() -> None:
+    """Increment the active-layer version when frontend toggles change response shape."""
+    global _active_layers_version
+    with _data_lock:
+        _active_layers_version += 1
+
+
+def get_active_layers_version() -> int:
+    """Return the current active-layer version (for ETag generation)."""
+    with _data_lock:
+        return _active_layers_version
+
+
+def get_latest_data_subset(*keys: str) -> DashboardData:
+    """Return a deep snapshot of only the requested top-level keys.
+
+    Grabs references under the lock, then deep-copies outside it so fetcher
+    writers are not blocked for the duration of a large clone (#375).
+    """
+    with _data_lock:
+        items = [(key, latest_data.get(key)) for key in keys]
+    snap: DashboardData = {}
+    for key, value in items:
+        snap[key] = copy.deepcopy(value)
+    return snap
+
+
+def get_latest_data_deepcopy_snapshot() -> DashboardData:
+    """Deep-copy the full dashboard for callers that need an isolated mutate-safe snap.
+
+    Prefer ``get_latest_data_refs_snapshot`` / ``get_latest_data_subset_refs`` on
+    read-only hot paths (legacy ``/api/live-data`` uses refs + orjson).
+
+    The per-value deepcopy runs OUTSIDE ``_data_lock`` so a large clone cannot
+    block fetcher writers (#375). The store contract is replace-don't-mutate,
+    but a writer that mutates a nested object in place (e.g. a live bridge
+    updating an entry that is also published in this store) can race the
+    deepcopy and raise ``RuntimeError: dictionary changed size during
+    iteration`` — surfacing a 500 on the health/live-data path. The racing
+    mutation window is tiny, so retry a few times rather than fail; a fresh
+    attempt almost always lands on a quiescent moment. Defense-in-depth on top
+    of fixing the offending writers, not a substitute for it.
+    """
+    attempts = 4
+    for attempt in range(attempts):
+        with _data_lock:
+            items = list(latest_data.items())
+        try:
+            return {key: copy.deepcopy(value) for key, value in items}
+        except RuntimeError:
+            if attempt == attempts - 1:
+                raise
+
+
+def get_latest_data_subset_refs(*keys: str) -> DashboardData:
+    """Return direct top-level references for read-only hot paths.
+
+    Writers replace top-level values under the lock instead of mutating them
+    in place, so readers can safely use these references after releasing the
+    lock as long as they do not modify them.
+    """
+    with _data_lock:
+        snap: DashboardData = {}
+        for key in keys:
+            snap[key] = latest_data.get(key)
+        return snap
+
+
+def get_latest_data_refs_snapshot() -> DashboardData:
+    """Return a shallow dict of all top-level store refs (read-only callers).
+
+    Copies the mapping under the lock without deep-copying values. Safe for
+    orjson serialization and other read-only consumers; callers MUST NOT
+    mutate nested objects.
+    """
+    with _data_lock:
+        return {key: value for key, value in latest_data.items()}
+
+
+def get_source_timestamps_snapshot() -> dict[str, str]:
+    """Return a stable copy of per-source freshness timestamps."""
+    with _data_lock:
+        return dict(source_timestamps)
+
+
+# ---------------------------------------------------------------------------
+# Active layers — frontend POSTs toggles, fetchers check before running.
+# Keep these aligned with the dashboard's default layer state so startup does
+# not fetch heavyweight feeds the UI starts with disabled.
+# ---------------------------------------------------------------------------
+active_layers: dict[str, bool] = {
+    "flights": True,
+    "private": False,
+    "jets": False,
+    "military": False,
+    "tracked": False,
+    "satellites": True,
+    "ships_military": False,
+    "ships_cargo": True,
+    "ships_civilian": True,
+    "ships_passenger": True,
+    "ships_tracked_yachts": False,
+    "earthquakes": True,
+    "cctv": True,
+    "ukraine_frontline": True,
+    "global_incidents": True,
+    "gps_jamming": True,
+    "kiwisdr": True,
+    "scanners": True,
+    "firms": True,
+    "internet_outages": True,
+    "datacenters": False,
+    "military_bases": False,
+    "sigint_meshtastic": True,
+    "sigint_aprs": True,
+    "weather_alerts": True,
+    "air_quality": True,
+    "volcanoes": True,
+    "fishing_activity": True,
+    "satnogs": True,
+    "tinygs": True,
+    "ukraine_alerts": True,
+    "power_plants": False,
+    "viirs_nightlights": False,
+    "psk_reporter": False,
+    "correlations": True,
+    "contradictions": True,
+    "uap_sightings": True,
+    "wastewater": True,
+    "ai_intel": True,
+    "crowdthreat": True,
+    "sar": True,
+    "road_corridor_trends": False,
+    "malware_c2": False,
+    "submarine_cables": False,
+    "scm_suppliers": False,
+    "cyber_threats": False,
+    "telegram_osint": True,
+    "gt_risk": False,
+}
+
+
+# ---------------------------------------------------------------------------
+# Layer overrides — additive, agent-driven, never persisted.
+# An automation (e.g. a hotspot daemon) can switch an overlay on for a while
+# without touching the operator's own toggles. Overrides merge ON TOP of
+# active_layers for reads; active_layers itself is only ever written by the
+# operator via POST /api/layers. The whole map shares one expiry, evaluated
+# lazily on read so no background task is needed. When it lapses the operator's
+# own view returns with no save/restore bookkeeping.
+# ---------------------------------------------------------------------------
+_MAX_OVERRIDE_TTL_S = 3600.0
+
+layer_overrides: dict[str, bool] = {}
+_layer_overrides_expires_at: float = 0.0
+
+
+def get_layer_overrides() -> dict[str, bool]:
+    """Return the live overrides, or {} once the TTL has lapsed."""
+    global _layer_overrides_expires_at
+    if not layer_overrides:
+        return {}
+    if time.monotonic() >= _layer_overrides_expires_at:
+        layer_overrides.clear()
+        _layer_overrides_expires_at = 0.0
+        bump_active_layers_version()
+        return {}
+    return dict(layer_overrides)
+
+
+def set_layer_overrides(overrides: dict[str, bool], ttl_seconds: float) -> dict[str, bool]:
+    """Replace the override map, returning the entries that were accepted.
+
+    Keys that are not real layers are dropped so a typo cannot silently do
+    nothing — the caller compares the return value against what it sent.
+    """
+    global _layer_overrides_expires_at
+    ttl = max(0.0, min(float(ttl_seconds), _MAX_OVERRIDE_TTL_S))
+    accepted = {k: bool(v) for k, v in overrides.items() if k in active_layers}
+    layer_overrides.clear()
+    layer_overrides.update(accepted)
+    _layer_overrides_expires_at = time.monotonic() + ttl if accepted else 0.0
+    bump_active_layers_version()
+    return accepted
+
+
+def clear_layer_overrides() -> None:
+    """Drop all overrides, restoring the operator's own layer state."""
+    global _layer_overrides_expires_at
+    if layer_overrides:
+        layer_overrides.clear()
+        _layer_overrides_expires_at = 0.0
+        bump_active_layers_version()
+
+
+def effective_layers() -> dict[str, bool]:
+    """Operator layer state merged with any live overrides."""
+    overrides = get_layer_overrides()
+    return {**active_layers, **overrides} if overrides else dict(active_layers)
+
+
+def is_any_active(*layer_names: str) -> bool:
+    """Return True if any of the given layer names is currently active."""
+    overrides = get_layer_overrides()
+    return any(
+        overrides.get(name, active_layers.get(name, True))
+        for name in layer_names
+    )

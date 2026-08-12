@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "ws": "^8.21.0"
+  },
+  "engines": {
+    "node": "24.x"
+  },
+  "version": "0.10.3"
+}

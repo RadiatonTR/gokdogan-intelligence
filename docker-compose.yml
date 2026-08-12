@@ -1,0 +1,150 @@
+## Default registry is GHCR because the GitHub release workflow publishes:
+##   ghcr.io/bigbodycobain/shadowbroker-backend:latest
+##   ghcr.io/bigbodycobain/shadowbroker-frontend:latest
+##
+## GitLab mirror images can still be used by swapping the image lines to:
+##   registry.gitlab.com/bigbodycobain/shadowbroker/backend:latest
+##   registry.gitlab.com/bigbodycobain/shadowbroker/frontend:latest
+
+services:
+  backend:
+    image: ghcr.io/bigbodycobain/shadowbroker-backend:latest
+    container_name: shadowbroker-backend
+    ports:
+      - "${BIND:-127.0.0.1}:${BACKEND_PORT:-8000}:8000"
+    environment:
+      - AIS_API_KEY=${AIS_API_KEY:-}
+      - OPENSKY_CLIENT_ID=${OPENSKY_CLIENT_ID:-}
+      - OPENSKY_CLIENT_SECRET=${OPENSKY_CLIENT_SECRET:-}
+      - LTA_ACCOUNT_KEY=${LTA_ACCOUNT_KEY:-}
+      - GFW_API_TOKEN=${GFW_API_TOKEN:-}
+      - GFW_EVENTS_PAGE_SIZE=${GFW_EVENTS_PAGE_SIZE:-500}
+      - GFW_EVENTS_MAX_PAGES=${GFW_EVENTS_MAX_PAGES:-10}
+      - GFW_EVENTS_LOOKBACK_DAYS=${GFW_EVENTS_LOOKBACK_DAYS:-7}
+      - GFW_EVENTS_TIMEOUT_S=${GFW_EVENTS_TIMEOUT_S:-90}
+      - WINDY_API_KEY=${WINDY_API_KEY:-}
+      - ADMIN_KEY=${ADMIN_KEY:-}
+      - FINNHUB_API_KEY=${FINNHUB_API_KEY:-}
+      - AIRFRAMES_API_KEY=${AIRFRAMES_API_KEY:-}
+      # Override allowed CORS origins (comma-separated). Auto-detects LAN IPs if empty.
+      - CORS_ORIGINS=${CORS_ORIGINS:-}
+      # Private Infonet bootstrap seeds. Seeds are discovery hints, not fixed roots.
+      - MESH_BOOTSTRAP_SEED_PEERS=${MESH_BOOTSTRAP_SEED_PEERS:-}
+      - MESH_BOOTSTRAP_SIGNER_PUBLIC_KEY=${MESH_BOOTSTRAP_SIGNER_PUBLIC_KEY:-ul1d0kj/ODPIp0OhHzX8eLAVXzJ3CVvzW1vn2IC6q3I=}
+      - MESH_INFONET_FLEET_JOIN=${MESH_INFONET_FLEET_JOIN:-false}
+      - MESH_DEFAULT_SYNC_PEERS=${MESH_DEFAULT_SYNC_PEERS:-}
+      - MESH_SYNC_TIMEOUT_S=${MESH_SYNC_TIMEOUT_S:-45}
+      - MESH_RELAY_PUSH_TIMEOUT_S=${MESH_RELAY_PUSH_TIMEOUT_S:-45}
+      - MESH_SYNC_MAX_PEERS_PER_CYCLE=${MESH_SYNC_MAX_PEERS_PER_CYCLE:-5}
+      - MESH_SWARM_MANIFEST_PULL_INTERVAL_S=${MESH_SWARM_MANIFEST_PULL_INTERVAL_S:-300}
+      # Explicitly opt into HTTPS/IP-based peer sync. Default remains private transports only.
+      - MESH_INFONET_ALLOW_CLEARNET_SYNC=${MESH_INFONET_ALLOW_CLEARNET_SYNC:-false}
+      # Tor/Arti SOCKS transport for private .onion Infonet sync.
+      - MESH_ARTI_ENABLED=${MESH_ARTI_ENABLED:-false}
+      - MESH_ARTI_SOCKS_PORT=${MESH_ARTI_SOCKS_PORT:-9050}
+      # Lean Infonet participant (meshnode.sh equivalent). Skips global OSINT fetchers.
+      - MESH_ONLY=${MESH_ONLY:-}
+      - SHADOWBROKER_MESH_NODE_RUNTIME=${SHADOWBROKER_MESH_NODE_RUNTIME:-}
+      # Operator-trusted sync/push peers. Leave empty unless you control the peer secret on both sides.
+      - MESH_RELAY_PEERS=${MESH_RELAY_PEERS:-}
+      - MESH_PUBLIC_PEER_URL=${MESH_PUBLIC_PEER_URL:-}
+      # Shared transport auth for operator peer push. Must be set to a unique secret per deployment.
+      - MESH_PEER_PUSH_SECRET=${MESH_PEER_PUSH_SECRET:-}
+      # Issue #256: optional per-peer HMAC secrets. Comma-separated
+      # `url=secret` pairs (no spaces). When a peer URL appears here, only
+      # the listed per-peer secret is accepted for it — the global
+      # MESH_PEER_PUSH_SECRET above is ignored for that specific URL. This
+      # closes the cross-peer impersonation surface for multi-peer fleets.
+      # Single-peer installs leave this empty (default) for unchanged
+      # behavior. Both sides of a peering must agree on the per-peer
+      # secret for a given URL.
+      - MESH_PEER_SECRETS=${MESH_PEER_SECRETS:-}
+      # Meshtastic MQTT is opt-in to avoid passive load on the public broker.
+      # Set MESH_MQTT_ENABLED=true in .env only when this node should join live MQTT.
+      - MESH_MQTT_ENABLED=${MESH_MQTT_ENABLED:-false}
+      - MESH_MQTT_BROKER=${MESH_MQTT_BROKER:-mqtt.meshtastic.org}
+      - MESH_MQTT_PORT=${MESH_MQTT_PORT:-1883}
+      - MESH_MQTT_USER=${MESH_MQTT_USER:-meshdev}
+      - MESH_MQTT_PASS=${MESH_MQTT_PASS:-large4cats}
+      - MESH_MQTT_PSK=${MESH_MQTT_PSK:-}
+      - MESH_MQTT_INCLUDE_DEFAULT_ROOTS=${MESH_MQTT_INCLUDE_DEFAULT_ROOTS:-true}
+      - MESH_MQTT_EXTRA_ROOTS=${MESH_MQTT_EXTRA_ROOTS:-}
+      - MESH_MQTT_EXTRA_TOPICS=${MESH_MQTT_EXTRA_TOPICS:-}
+      - MESHTASTIC_OPERATOR_CALLSIGN=${MESHTASTIC_OPERATOR_CALLSIGN:-}
+      # The bundled Docker UI talks to the backend across Docker's private bridge.
+      # Treat that bridge as local operator access while ports remain bound to 127.0.0.1 by default.
+      - SHADOWBROKER_TRUST_DOCKER_BRIDGE_LOCAL_OPERATOR=${SHADOWBROKER_TRUST_DOCKER_BRIDGE_LOCAL_OPERATOR:-1}
+      # Issue #250: bridge trust is now bound to specific container hostnames
+      # (default: 'frontend' compose service + 'shadowbroker-frontend' container
+      # name). If you rename the frontend service or run with a different
+      # container_name, list the hostnames here (comma-separated, no spaces).
+      - SHADOWBROKER_TRUSTED_FRONTEND_HOSTS=${SHADOWBROKER_TRUSTED_FRONTEND_HOSTS:-frontend,shadowbroker-frontend}
+      # Third-party fetcher opt-ins. Default OFF — these phone home to
+      # politically/commercially sensitive upstreams (Polymarket, Kalshi,
+      # Yahoo Finance, EU disinfo trackers, NUFORC dataset host, etc.).
+      # Set to "true" in your .env only if you want the node's IP to
+      # contact each of these services. The dashboard panel for each
+      # feature reads as "no data" until the corresponding flag is on.
+      - PREDICTION_MARKETS_ENABLED=${PREDICTION_MARKETS_ENABLED:-false}
+      - FINANCIAL_ENABLED=${FINANCIAL_ENABLED:-false}
+      - CROWDTHREAT_ENABLED=${CROWDTHREAT_ENABLED:-false}
+      - FIMI_ENABLED=${FIMI_ENABLED:-false}
+      - NUFORC_ENABLED=${NUFORC_ENABLED:-false}
+      - NEWS_ENABLED=${NEWS_ENABLED:-true}
+      - TELEGRAM_OSINT_ENABLED=${TELEGRAM_OSINT_ENABLED:-true}
+      - TELEGRAM_OSINT_CHANNELS=${TELEGRAM_OSINT_CHANNELS:-}
+      - TELEGRAM_OSINT_INTERVAL_MINUTES=${TELEGRAM_OSINT_INTERVAL_MINUTES:-60}
+      - TELEGRAM_OSINT_TRANSLATE=${TELEGRAM_OSINT_TRANSLATE:-true}
+      - TELEGRAM_OSINT_TRANSLATE_TO=${TELEGRAM_OSINT_TRANSLATE_TO:-en}
+      - GT_ANALYTICS_ENABLED=${GT_ANALYTICS_ENABLED:-false}
+      - GT_ANALYTICS_HIGH_RISK_THRESHOLD=${GT_ANALYTICS_HIGH_RISK_THRESHOLD:-0.6}
+      - GT_ANALYTICS_BASE_PRIOR=${GT_ANALYTICS_BASE_PRIOR:-0.15}
+      - GT_ANALYTICS_WATCHED_CHANNELS=${GT_ANALYTICS_WATCHED_CHANNELS:-}
+      # Optional override. Leave unset and use AI Intel → Connect Agent → Bootstrap
+      # instead — the UI persists OPENCLAW_HMAC_SECRET to data/openclaw.env on the
+      # backend_data volume so host-side agents can HMAC-auth after container restarts.
+      - OPENCLAW_HMAC_SECRET=${OPENCLAW_HMAC_SECRET:-}
+    volumes:
+      - backend_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: ${BACKEND_MEMORY_LIMIT:-4G}
+          cpus: '2'
+
+  frontend:
+    image: ghcr.io/bigbodycobain/shadowbroker-frontend:latest
+    container_name: shadowbroker-frontend
+    ports:
+      - "${BIND:-127.0.0.1}:${FRONTEND_PORT:-3000}:3000"
+    environment:
+      # Points the Next.js server-side proxy at the backend container via Docker networking.
+      # Change this if your backend runs on a different host or port.
+      - BACKEND_URL=http://backend:8000
+      # Lets the server-side proxy authenticate protected local-node API calls.
+      - ADMIN_KEY=${ADMIN_KEY:-}
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1'
+
+volumes:
+  backend_data:

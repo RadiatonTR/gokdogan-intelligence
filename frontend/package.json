@@ -1,0 +1,71 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/dev-all.cjs",
+    "dev:frontend": "next dev",
+    "dev:backend": "node ../start-backend.js",
+    "build:privacy-core-wasm": "node scripts/build-privacy-core-wasm.cjs",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint --max-warnings=0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "bundle:report": "node scripts/report-bundle-size.js",
+    "test": "npm run test:ci",
+    "test:runtime-assurance": "set NODE_OPTIONS=--require ./scripts/vite-no-net-use.cjs && vitest run --pool=threads src/__tests__/mesh/gateCompatDecryptUx.test.tsx src/__tests__/mesh/wormholeIdentityClientProfiles.test.ts src/__tests__/mesh/gateMessageSnapshot.test.ts src/__tests__/desktop/desktopBridgeBootstrapPreference.test.ts src/__tests__/desktop/backendEndpoint.test.ts src/__tests__/desktop/desktopControlRouting.test.ts",
+    "test:watch": "vitest",
+    "test:coverage": "set NODE_OPTIONS=--require ./scripts/vite-no-net-use.cjs && vitest run --coverage --pool=threads",
+    "test:ci": "set NODE_OPTIONS=--require ./scripts/vite-no-net-use.cjs && vitest run --pool=threads"
+  },
+  "dependencies": {
+    "@mapbox/point-geometry": "^1.1.0",
+    "@tauri-apps/plugin-process": "^2.3.1",
+    "@tauri-apps/plugin-updater": "^2.10.1",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
+    "framer-motion": "^12.38.0",
+    "hls.js": "^1.6.15",
+    "lucide-react": "^0.575.0",
+    "maplibre-gl": "^4.7.1",
+    "next": "16.2.11",
+    "qrcode": "^1.5.4",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-map-gl": "^8.1.0",
+    "satellite.js": "^6.0.2",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.1.8",
+    "concurrently": "^9.2.1",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.4",
+    "jsdom": "^28.1.0",
+    "prettier": "^3.8.3",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vite": "^8.0.16",
+    "vitest": "^4.1.8"
+  },
+  "overrides": {
+    "postcss": "8.5.24",
+    "nanoid": "3.3.17",
+    "sharp": "0.35.3",
+    "@types/mapbox__point-geometry": "0.1.4"
+  },
+  "allowScripts": {
+    "unrs-resolver@1.11.1": true,
+    "sharp@0.35.3": true
+  },
+  "engines": {
+    "node": "24.x"
+  }
+}

@@ -1,0 +1,351 @@
+@import 'tailwindcss';
+
+:root {
+  --background: #0a0a0a;
+  --foreground: #d1d5db;
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #080808;
+  --bg-tertiary: #0f0f0f;
+  --bg-panel: rgba(10, 10, 10, 0.92);
+  --border-primary: rgba(8, 145, 178, 0.30);
+  --border-secondary: rgba(8, 145, 178, 0.45);
+  --border-glow: rgba(6, 182, 212, 0.18);
+  --text-primary: rgb(209, 213, 219);
+  --text-secondary: rgb(34, 211, 238);
+  --text-muted: rgb(8, 145, 178);
+  --text-heading: rgb(207, 250, 254);
+  --hover-accent: rgba(8, 51, 68, 0.2);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.15);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.28);
+  --font-geist-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, 'Noto Sans',
+    sans-serif;
+  --font-roboto-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+  /* Offline-first terminal font stack. Kept under the legacy variable name so
+     existing map/popup styles do not need a risky broad refactor. */
+  --font-jetbrains-mono:
+    'Cascadia Mono', 'Cascadia Code', Consolas, 'Lucida Console', 'Liberation Mono',
+    'Courier New', ui-monospace, monospace;
+}
+
+/* Light theme: only the map basemap changes — UI stays dark */
+[data-theme='light'] {
+  --background: #0a0a0a;
+  --foreground: #d1d5db;
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #080808;
+  --bg-tertiary: #0f0f0f;
+  --bg-panel: rgba(10, 10, 10, 0.92);
+  --border-primary: rgba(8, 145, 178, 0.30);
+  --border-secondary: rgba(8, 145, 178, 0.45);
+  --border-glow: rgba(6, 182, 212, 0.18);
+  --text-primary: rgb(209, 213, 219);
+  --text-secondary: rgb(34, 211, 238);
+  --text-muted: rgb(8, 145, 178);
+  --text-heading: rgb(207, 250, 254);
+  --hover-accent: rgba(8, 51, 68, 0.2);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.15);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.28);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-roboto-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-jetbrains-mono), var(--font-roboto-mono), 'Roboto Mono', monospace;
+}
+
+/* Global interactive cursor hints */
+button:not(:disabled),
+[role='button']:not([aria-disabled='true']),
+a[href],
+summary,
+label[for],
+input[type='button']:not(:disabled),
+input[type='submit']:not(:disabled),
+input[type='reset']:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled,
+[role='button'][aria-disabled='true'],
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+}
+
+/* Styled thin scrollbar for dark HUD UI */
+.styled-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.styled-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.styled-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 10px;
+}
+
+.styled-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+.styled-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+/* DOS block cursor blink */
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ── TERMINAL UTILITY CLASSES ── */
+
+/* Subtle text glow for cyan headings */
+.text-glow {
+  text-shadow: 0 0 10px rgba(34, 211, 238, 0.45), 0 0 20px rgba(34, 211, 238, 0.15);
+}
+
+/* Terminal input — prompt style */
+.terminal-input {
+  border-radius: 0;
+  border: 1px solid rgba(8, 145, 178, 0.35);
+  background: rgba(10, 10, 10, 0.5);
+}
+.terminal-input:focus {
+  border-color: rgba(34, 211, 238, 0.5);
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.2);
+  outline: none;
+}
+
+/* Map popup shared utilities */
+.map-popup {
+  background: rgba(10, 14, 20, 0.96);
+  border-radius: 2px;
+  border: 1px solid rgba(8, 145, 178, 0.35);
+  padding: 12px 16px;
+  color: #d1d5db;
+  font-family:
+    var(--font-jetbrains-mono), var(--font-roboto-mono), 'Roboto Mono', monospace, 'Microsoft YaHei', 'PingFang SC',
+    'Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR', sans-serif;
+  font-size: 13px;
+  min-width: 240px;
+  max-width: 380px;
+}
+
+.map-popup-title {
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 6px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.map-popup-row {
+  margin-bottom: 4px;
+}
+
+.map-popup-subtitle {
+  font-size: 12px;
+  margin-bottom: 6px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+/* Hide MapLibre logo & attribution */
+.maplibregl-ctrl-logo,
+.maplibregl-ctrl-attrib {
+  display: none !important;
+}
+
+/* MapLibre Popup Overrides */
+.maplibregl-popup-content {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.maplibregl-popup-tip {
+  display: none !important;
+}
+
+/* Focus mode: dim the map canvas (tiles + drawn layers) when a popup is active.
+   Inside MapLibre's DOM, .maplibregl-canvas-container is a SIBLING of .maplibregl-popup,
+   so this filter dims the map without affecting the popup at all. */
+.map-focus-active .maplibregl-canvas-container {
+  filter: brightness(0.3);
+  transition: filter 0.3s ease;
+}
+
+/* Keep popups fully bright and interactive above the dimmed canvas */
+.map-focus-active .maplibregl-popup {
+  z-index: 10 !important;
+}
+
+/* ── INFONET CRT TERMINAL EFFECTS ── */
+
+.infonet-font {
+  font-family: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, monospace;
+}
+
+/* CRT scanline overlay — scoped to .crt containers only */
+.crt {
+  position: relative;
+  animation: crt-flicker 0.15s infinite;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.2);
+}
+
+.crt::before {
+  content: ' ';
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background:
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+    linear-gradient(
+      90deg,
+      rgba(255, 0, 0, 0.06),
+      rgba(0, 255, 0, 0.02),
+      rgba(0, 0, 255, 0.06)
+    );
+  z-index: 2;
+  background-size: 100% 2px, 3px 100%;
+  pointer-events: none;
+}
+
+@keyframes crt-flicker {
+  0% {
+    opacity: 0.95;
+  }
+  5% {
+    opacity: 0.85;
+  }
+  10% {
+    opacity: 0.95;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crt {
+    animation: none;
+  }
+  .crt::before {
+    display: none;
+  }
+}
+
+/* Ticker animation for InfoNet */
+@keyframes infonet-ticker {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-ticker {
+  display: inline-block;
+  white-space: nowrap;
+  animation: infonet-ticker 90s linear infinite;
+}
+
+/* Scoped scrollbar for CRT terminal */
+.crt ::-webkit-scrollbar {
+  width: 8px;
+}
+.crt ::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+.crt ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+.crt ::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* ── THREAT ALERT ACCESSIBILITY PATTERNS ── */
+/* Border patterns for color-blind differentiation beyond hue */
+.threat-border-critical {
+  border-width: 3px !important;
+  border-style: solid !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.4), inset 0 0 12px rgba(239, 68, 68, 0.1);
+  animation: threat-pulse-critical 2s ease-in-out infinite;
+}
+
+.threat-border-high {
+  border-width: 2px !important;
+  border-style: solid !important;
+}
+
+.threat-border-medium {
+  border-width: 2px !important;
+  border-style: dashed !important;
+}
+
+.threat-border-low {
+  border-width: 1px !important;
+  border-style: dotted !important;
+}
+
+@keyframes threat-pulse-critical {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.4), inset 0 0 12px rgba(239, 68, 68, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.6), inset 0 0 20px rgba(239, 68, 68, 0.15);
+  }
+}
+
+/* ── FEED HEALTH INDICATOR DOTS ── */
+.feed-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  margin-right: 3px;
+  vertical-align: middle;
+}
+
+.feed-dot-healthy {
+  background: #22c55e;
+  box-shadow: 0 0 4px rgba(34, 197, 94, 0.5);
+}
+
+.feed-dot-stale {
+  background: #eab308;
+  box-shadow: 0 0 4px rgba(234, 179, 8, 0.5);
+}
+
+.feed-dot-offline {
+  background: #ef4444;
+  box-shadow: 0 0 4px rgba(239, 68, 68, 0.5);
+}

@@ -1,0 +1,124 @@
+{
+  "feeds": [
+    {
+      "name": "TRT Haber",
+      "url": "https://www.trthaber.com/sondakika.rss",
+      "weight": 5
+    },
+    {
+      "name": "Anadolu Ajansı",
+      "url": "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+      "weight": 5
+    },
+    {
+      "name": "NPR",
+      "url": "https://feeds.npr.org/1004/rss.xml",
+      "weight": 4
+    },
+    {
+      "name": "BBC",
+      "url": "https://feeds.bbci.co.uk/news/world/rss.xml",
+      "weight": 3
+    },
+    {
+      "name": "AlJazeera",
+      "url": "https://www.aljazeera.com/xml/rss/all.xml",
+      "weight": 2
+    },
+    {
+      "name": "NYT",
+      "url": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+      "weight": 1
+    },
+    {
+      "name": "GDACS",
+      "url": "https://www.gdacs.org/xml/rss.xml",
+      "weight": 5
+    },
+    {
+      "name": "The War Zone",
+      "url": "https://www.twz.com/feed",
+      "weight": 4
+    },
+    {
+      "name": "Bellingcat",
+      "url": "https://www.bellingcat.com/feed/",
+      "weight": 4
+    },
+    {
+      "name": "Guardian",
+      "url": "https://www.theguardian.com/world/rss",
+      "weight": 3
+    },
+    {
+      "name": "TASS",
+      "url": "https://tass.com/rss/v2.xml",
+      "weight": 2
+    },
+    {
+      "name": "Xinhua",
+      "url": "https://www.news.cn/english/rss/worldrss.xml",
+      "weight": 2
+    },
+    {
+      "name": "CNA",
+      "url": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml",
+      "weight": 3
+    },
+    {
+      "name": "Mercopress",
+      "url": "https://en.mercopress.com/rss/",
+      "weight": 3
+    },
+    {
+      "name": "SCMP",
+      "url": "https://www.scmp.com/rss/91/feed",
+      "weight": 4
+    },
+    {
+      "name": "The Diplomat",
+      "url": "https://thediplomat.com/feed/",
+      "weight": 4
+    },
+    {
+      "name": "Yonhap",
+      "url": "https://en.yna.co.kr/RSS/news.xml",
+      "weight": 4
+    },
+    {
+      "name": "Asia Times",
+      "url": "https://asiatimes.com/feed/",
+      "weight": 3
+    },
+    {
+      "name": "Defense News",
+      "url": "https://www.defensenews.com/arc/outboundfeeds/rss/",
+      "weight": 3
+    },
+    {
+      "name": "Japan Times",
+      "url": "https://www.japantimes.co.jp/feed/",
+      "weight": 3
+    },
+    {
+      "name": "CSM",
+      "url": "https://www.csmonitor.com/rss/world",
+      "weight": 4
+    },
+    {
+      "name": "PBS NewsHour",
+      "url": "https://www.pbs.org/newshour/feeds/rss/world",
+      "weight": 4
+    },
+    {
+      "name": "France 24",
+      "url": "https://www.france24.com/en/rss",
+      "weight": 4
+    },
+    {
+      "name": "DW",
+      "url": "https://rss.dw.com/xml/rss-en-world",
+      "weight": 4
+    }
+  ]
+}

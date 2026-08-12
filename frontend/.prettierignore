@@ -1,0 +1,7 @@
+.next
+node_modules
+public
+
+# Legacy tree is not Prettier-clean yet. Avoid a whole-frontend rewrite in
+# the v0.9.7 release PR; narrow this in a dedicated formatting cleanup.
+**/*

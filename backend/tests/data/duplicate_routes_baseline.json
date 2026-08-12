@@ -1,0 +1,9 @@
+{
+  "_meta": {
+    "issue": "#239",
+    "note": "Snapshot of currently-tolerated duplicate route registrations. The test in test_no_new_duplicate_routes.py fails if any NEW (method, path) duplicate appears outside this list. Removing entries (by actually deduping) is fine and the test stays green. New entries here require explicit, reviewed updates.",
+    "generated_with": "python -c 'see tests/test_no_new_duplicate_routes.py'"
+  },
+  "duplicates": {},
+  "note": "All previously-tolerated duplicate main.py route decorators were removed. Canonical router modules now own these routes; this baseline is intentionally empty and remains a CI ceiling against regressions."
+}

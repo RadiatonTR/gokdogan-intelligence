@@ -1,0 +1,61 @@
+{
+  "default_language": "tr",
+  "distribution": "G\u00f6kdo\u011fan Intelligence 1.0.0",
+  "generated_at": "2026-08-11T21:48:43.124521Z",
+  "git_commit": null,
+  "git_commit_status": "unavailable-source-archive",
+  "product": "G\u00f6kdo\u011fan Intelligence",
+  "release_profile": "public-authorized-osint",
+  "revision": "R24",
+  "safety_boundaries": {
+    "active_recon_by_default": false,
+    "hidden_military_location_discovery": false,
+    "live_law_enforcement_tracking": false,
+    "person_targeted_aircraft_or_yacht_watchlists": false,
+    "private_or_closed_camera_discovery": false,
+    "sensitive_military_live_telemetry_aggregation": false
+  },
+  "safety_defaults": {
+    "active_recon": false,
+    "experimental_privacy": false,
+    "host_shell": false
+  },
+  "schema": "gokdogan.release-attestation.v2",
+  "source_file_count": 1259,
+  "source_inputs": [
+    {
+      "path": "uv.lock",
+      "sha256": "928a1c972335b2701a52b82bfdd35e6c6c288d357491d47b48cf7002878434a7"
+    },
+    {
+      "path": "frontend/package-lock.json",
+      "sha256": "fa65134c1ac3dc20d23a4ade36cf9c3997338fa9ae11b1217c224e50fcf47ade"
+    },
+    {
+      "path": "desktop-shell/package-lock.json",
+      "sha256": "573a46e46c4a4eaf62ee499a9c7df617273cf9a7b87f470e0d5c46d89b91162d"
+    },
+    {
+      "path": "desktop-shell/tauri-skeleton/src-tauri/Cargo.lock",
+      "sha256": "102133eb7b37518f56f2430cc9395483fa4377b42ddef81f7b2c6ea0bb41c88b"
+    },
+    {
+      "path": "R24-IMPLEMENTATION-MANIFEST.json",
+      "sha256": "72746efd7660157f0a8bf50bbe4ffcbf7b618cbb5b1ed34f3c311d89f85046c2"
+    },
+    {
+      "path": "SBOM-R24.cdx.json",
+      "sha256": "9d29c31fbc77c2d750ec7ce85416180abca9f879909b48e4845e687012b5133d"
+    },
+    {
+      "path": "release-version.json",
+      "sha256": "3d045fcb1b38efc66cd10fbe45f4310be23f662f938af7af6ee96e1ee7427031"
+    },
+    {
+      "path": ".node-version",
+      "sha256": "7e8a2fa94951112b894a3dbe3d05efef5e9263741fa49125f0a70f40fedab4cc"
+    }
+  ],
+  "source_tree_fingerprint": "f73c291f2aebb54d8600c7aeb4235a6b15dfcccdee4d32701ab6e6c76bfd2765",
+  "version": "0.10.3"
+}

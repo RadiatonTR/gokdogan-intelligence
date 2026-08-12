@@ -1,0 +1,21 @@
+{
+  "schema": "gokdogan.release-version.v1",
+  "product": "Gökdoğan Intelligence",
+  "distribution": "Gökdoğan Intelligence 1.0.0",
+  "distribution_slug": "GOKDOGAN-INTELLIGENCE-v1.0.0",
+  "technical_core_revision": "R24",
+  "technical_base_version": "0.10.3",
+  "default_language": "tr",
+  "release_profile": "public-authorized-osint",
+  "safety_boundaries": {
+    "private_or_closed_camera_discovery": false,
+    "live_law_enforcement_tracking": false,
+    "hidden_military_location_discovery": false,
+    "sensitive_military_live_telemetry_aggregation": false,
+    "person_targeted_aircraft_or_yacht_watchlists": false,
+    "active_recon_by_default": false
+  },
+  "package_revision": "1.0.0",
+  "package_label": "Gökdoğan Intelligence v1.0.0",
+  "public_version": "1.0.0"
+}
