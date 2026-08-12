@@ -7,24 +7,6 @@ on:
     branches: [main]
   workflow_call:
 
-# CI flake mitigation:
-# ci.yml is triggered TWICE per PR on the same commit — once directly via
-# the `pull_request` trigger above ("Frontend Tests & Build" check) and once
-# via `workflow_call` from docker-publish.yml ("CI Gate / Frontend Tests &
-# Build" check). Both jobs land on the same Actions runner pool at the same
-# time and fight for CPU/RAM. Under contention, React's reconciliation in
-# `messagesViewFirstContact.test.tsx > removes an approved contact …`
-# overruns its 5s waitFor timeout — that's the single failure mode we've
-# seen flake on PRs #226, #237, #261, #262, #265, #294, #303, and the
-# fd7d6fa push. Backend tests and every other frontend test pass under
-# the same conditions, which is what made this look random.
-#
-# Pinning a concurrency group on the SHA (PR head, or the pushed commit
-# for main) serializes the two invocations so neither starves the other.
-# We use cancel-in-progress: false so the second one queues instead of
-# cancelling — cancelling could leave the PR check stuck "Expected" if
-# only one of the two ever finishes. Total CI time grows by ~2 min in
-# exchange for deterministic outcomes.
 concurrency:
   group: ci-${{ github.event.pull_request.head.sha || github.sha }}
   cancel-in-progress: false
@@ -37,8 +19,8 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24.19.0
           cache: npm
@@ -53,16 +35,19 @@ jobs:
   backend:
     name: Backend Lint & Test
     runs-on: ubuntu-latest
+    env:
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: "utf-8"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Run secret scan
         run: bash backend/scripts/scan-secrets.sh --all
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Install dependencies
