@@ -90,7 +90,7 @@ jobs:
           $path = "Cert:\CurrentUser\My\$env:SHADOWBROKER_WINDOWS_CERT_THUMBPRINT"
           if (Test-Path $path) { Remove-Item -LiteralPath $path -Force }
       - name: Windows artifact'lerini yükle
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gokdogan-intelligence-windows
           path: |
