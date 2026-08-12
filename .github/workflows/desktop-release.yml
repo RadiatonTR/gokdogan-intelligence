@@ -49,6 +49,11 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: uv kur
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.97.1
@@ -83,10 +88,17 @@ jobs:
           node scripts/validate-npm-locks.cjs
           cargo metadata --locked --manifest-path desktop-shell/tauri-skeleton/src-tauri/Cargo.toml --format-version 1 --no-deps
 
+      - name: Backend test bağımlılıklarını kur
+        shell: pwsh
+        run: |
+          Set-Location backend
+          uv sync --frozen --group dev
+
       - name: Gökdoğan sürüm sözleşme testleri
         shell: pwsh
         run: |
-          python -m pytest backend/tests/test_gokdogan_gd1_r4_operations.py backend/tests/test_gokdogan_v1_release_contract.py -q --tb=short
+          Set-Location backend
+          uv run pytest tests/test_gokdogan_gd1_r4_operations.py tests/test_gokdogan_v1_release_contract.py -q --tb=short
 
       - name: İsteğe bağlı Authenticode sertifikasını içe aktar
         if: env.GOKDOGAN_WINDOWS_CERT_PFX_B64 != '' && env.GOKDOGAN_WINDOWS_CERT_PASSWORD != ''
