@@ -1,0 +1,135 @@
+name: Gökdoğan Windows Release Kurulum Doğrulaması
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Doğrulanacak GitHub Release etiketi (örn. v1.0.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-release-install-verify-${{ github.event.release.tag_name || inputs.release_tag }}
+  cancel-in-progress: false
+
+jobs:
+  install-verify:
+    name: Windows Installer Clean Install & Runtime Verify
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: "utf-8"
+    steps:
+      - name: Yayın etiketini belirle
+        id: release
+        shell: pwsh
+        run: |
+          $tag = ''
+          if ('${{ github.event_name }}' -eq 'release') {
+            $tag = '${{ github.event.release.tag_name }}'.Trim()
+          } else {
+            $tag = '${{ inputs.release_tag }}'.Trim()
+          }
+          if ($tag -notmatch '^v\d+\.\d+\.\d+([-.+][0-9A-Za-z.-]+)?$') {
+            throw "Geçersiz release etiketi: $tag"
+          }
+          Add-Content -Path $env:GITHUB_ENV -Value "GOKDOGAN_VERIFY_TAG=$tag"
+          "tag=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "Doğrulanacak yayın: $tag"
+
+      - name: Yayın kaynağını checkout et
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.release.outputs.tag }}
+          fetch-depth: 1
+
+      - name: GitHub Release installer'ını indir
+        shell: pwsh
+        run: |
+          $download = Join-Path $env:RUNNER_TEMP 'gokdogan-release'
+          New-Item -ItemType Directory -Force -Path $download | Out-Null
+
+          gh release download $env:GOKDOGAN_VERIFY_TAG --repo $env:GITHUB_REPOSITORY --pattern '*.exe' --dir $download
+          if ($LASTEXITCODE -ne 0) { throw 'GitHub Release EXE varlığı indirilemedi.' }
+
+          $installer = Get-ChildItem -LiteralPath $download -File -Filter '*.exe' |
+            Sort-Object @{ Expression = { if ($_.Name -match 'Setup') { 0 } else { 1 } } }, LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $installer) { throw 'GitHub Release içinde Windows installer EXE bulunamadı.' }
+
+          Add-Content -Path $env:GITHUB_ENV -Value "GOKDOGAN_RELEASE_INSTALLER=$($installer.FullName)"
+          Write-Host "Installer: $($installer.Name)"
+          Write-Host "SHA-256: $((Get-FileHash -LiteralPath $installer.FullName -Algorithm SHA256).Hash)"
+
+      - name: Authenticode durumunu kaydet
+        shell: pwsh
+        run: |
+          $outDir = Join-Path $env:GITHUB_WORKSPACE 'install-verify-results'
+          New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+          $signature = Get-AuthenticodeSignature -LiteralPath $env:GOKDOGAN_RELEASE_INSTALLER
+          [ordered]@{
+            release_tag = $env:GOKDOGAN_VERIFY_TAG
+            installer = [IO.Path]::GetFileName($env:GOKDOGAN_RELEASE_INSTALLER)
+            sha256 = (Get-FileHash -LiteralPath $env:GOKDOGAN_RELEASE_INSTALLER -Algorithm SHA256).Hash.ToLowerInvariant()
+            authenticode_status = [string]$signature.Status
+            authenticode_message = [string]$signature.StatusMessage
+            signer_subject = if ($signature.SignerCertificate) { [string]$signature.SignerCertificate.Subject } else { $null }
+            verified_at_utc = (Get-Date).ToUniversalTime().ToString('o')
+          } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $outDir 'installer-integrity.json') -Encoding UTF8
+          Write-Host "Authenticode: $($signature.Status)"
+
+      - name: NSIS installer'ı sessiz kur
+        shell: pwsh
+        run: |
+          $proc = Start-Process -FilePath $env:GOKDOGAN_RELEASE_INSTALLER -ArgumentList '/S' -Wait -PassThru
+          if ($proc.ExitCode -ne 0) {
+            throw "Windows installer sessiz kurulumda başarısız oldu. Exit code: $($proc.ExitCode)"
+          }
+          Start-Sleep -Seconds 3
+
+      - name: Kurulu runtime öz testini çalıştır
+        shell: pwsh
+        run: |
+          if (-not (Test-Path -LiteralPath '.\WINDOWS-DESKTOP-VERIFY-INSTALL.ps1')) {
+            throw 'Tag kaynağında WINDOWS-DESKTOP-VERIFY-INSTALL.ps1 bulunamadı.'
+          }
+          & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File '.\WINDOWS-DESKTOP-VERIFY-INSTALL.ps1'
+          if ($LASTEXITCODE -ne 0) {
+            throw "Kurulu Gökdoğan runtime doğrulaması başarısız oldu. Exit code: $LASTEXITCODE"
+          }
+
+      - name: Doğrulama raporlarını topla
+        if: always()
+        shell: pwsh
+        run: |
+          $outDir = Join-Path $env:GITHUB_WORKSPACE 'install-verify-results'
+          New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+          $stateDir = Join-Path $env:LOCALAPPDATA 'com.gokdogan.desktop'
+          foreach ($name in @(
+            'desktop-self-test.json',
+            'desktop-runtime-state.json',
+            'desktop-self-test.stdout.log',
+            'desktop-self-test.stderr.log',
+            'install-state.json'
+          )) {
+            $src = Join-Path $stateDir $name
+            if (Test-Path -LiteralPath $src) {
+              Copy-Item -LiteralPath $src -Destination (Join-Path $outDir $name) -Force
+            }
+          }
+
+      - name: Kurulum doğrulama artifact'ini yükle
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: gokdogan-${{ steps.release.outputs.tag }}-installed-runtime-verification
+          path: install-verify-results/**
+          if-no-files-found: warn
+          retention-days: 30
