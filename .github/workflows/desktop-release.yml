@@ -2,12 +2,21 @@ name: Gökdoğan Windows Masaüstü Yayını
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Yayın etiketi (örn. v1.0.0). Boş bırakılırsa yalnız artifact üretilir."
+        required: false
+        type: string
   push:
+    branches:
+      - main
     tags:
       - "v*"
+    paths:
+      - "docs/RELEASE-v1.0.0-TRIGGER.md"
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
   attestations: write
 
@@ -19,10 +28,12 @@ jobs:
       GOKDOGAN_SOURCE_COMMIT: ${{ github.sha }}
       GOKDOGAN_WINDOWS_CERT_PFX_B64: ${{ secrets.GOKDOGAN_WINDOWS_CERT_PFX_B64 }}
       GOKDOGAN_WINDOWS_CERT_PASSWORD: ${{ secrets.GOKDOGAN_WINDOWS_CERT_PASSWORD }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - uses: actions/setup-node@v4
         with:
           node-version: 24.19.0
@@ -31,27 +42,50 @@ jobs:
             backend/package-lock.json
             frontend/package-lock.json
             desktop-shell/package-lock.json
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.97.1
+
+      - name: Yayın etiketini belirle
+        shell: pwsh
+        run: |
+          $tag = ''
+          if ('${{ github.ref_type }}' -eq 'tag') {
+            $tag = '${{ github.ref_name }}'
+          } elseif ('${{ github.event_name }}' -eq 'workflow_dispatch' -and '${{ inputs.release_tag }}') {
+            $tag = '${{ inputs.release_tag }}'.Trim()
+          } elseif ('${{ github.event_name }}' -eq 'push' -and '${{ github.ref }}' -eq 'refs/heads/main') {
+            $tag = 'v1.0.0'
+          }
+          if ($tag -and $tag -notmatch '^v\d+\.\d+\.\d+([-.+][0-9A-Za-z.-]+)?$') {
+            throw "Geçersiz yayın etiketi: $tag"
+          }
+          Add-Content -Path $env:GITHUB_ENV -Value "GOKDOGAN_RELEASE_TAG=$tag"
+          Write-Host "Yayın etiketi: $tag"
+
       - name: Sürüm kapılarını doğrula
         shell: pwsh
         run: |
           python scripts/validate_r24_release.py
           python scripts/generate_release_attestation.py
           python scripts/check_release_cleanliness.py
+
       - name: Kaynak bağımlılıklarını doğrula
         shell: pwsh
         run: |
           node scripts/validate-npm-locks.cjs
           cargo metadata --locked --manifest-path desktop-shell/tauri-skeleton/src-tauri/Cargo.toml --format-version 1 --no-deps
+
       - name: Gökdoğan sürüm sözleşme testleri
         shell: pwsh
         run: |
           python -m pytest backend/tests/test_gokdogan_gd1_r4_operations.py backend/tests/test_gokdogan_v1_release_contract.py -q --tb=short
+
       - name: İsteğe bağlı Authenticode sertifikasını içe aktar
         if: env.GOKDOGAN_WINDOWS_CERT_PFX_B64 != '' && env.GOKDOGAN_WINDOWS_CERT_PASSWORD != ''
         shell: pwsh
@@ -64,6 +98,7 @@ jobs:
           Add-Content -Path $env:GITHUB_ENV -Value "SHADOWBROKER_WINDOWS_CERT_THUMBPRINT=$($cert.Thumbprint)"
           Add-Content -Path $env:GITHUB_ENV -Value 'SHADOWBROKER_REQUIRE_WINDOWS_SIGNATURE=1'
           Remove-Item -LiteralPath $pfx -Force
+
       - name: Masaüstü derleme
         shell: cmd
         env:
@@ -71,6 +106,7 @@ jobs:
           SHADOWBROKER_NO_FINAL_PAUSE: "1"
           GOKDOGAN_LIVE_DATA: "false"
         run: WINDOWS-DESKTOP-ONE-CLICK.bat
+
       - name: Artifact bütünlük özeti
         shell: pwsh
         run: |
@@ -79,22 +115,76 @@ jobs:
           if (-not $installer) { throw 'Attestation için Windows installer bulunamadı.' }
           $relative = [IO.Path]::GetRelativePath($env:GITHUB_WORKSPACE, $installer.FullName).Replace('\','/')
           Add-Content -Path $env:GITHUB_ENV -Value "GOKDOGAN_INSTALLER_PATH=$relative"
+
       - name: GitHub build provenance attestation
         uses: actions/attest@v4
         with:
           subject-path: ${{ env.GOKDOGAN_INSTALLER_PATH }}
+
       - name: İçe aktarılan kod imzalama sertifikasını temizle
         if: always() && env.SHADOWBROKER_WINDOWS_CERT_THUMBPRINT != ''
         shell: pwsh
         run: |
           $path = "Cert:\CurrentUser\My\$env:SHADOWBROKER_WINDOWS_CERT_THUMBPRINT"
           if (Test-Path $path) { Remove-Item -LiteralPath $path -Force }
+
       - name: Windows artifact'lerini yükle
         uses: actions/upload-artifact@v4
         with:
           name: gokdogan-intelligence-windows
           path: |
             dist/windows/**
+            dist/*Windows*Bundle*.zip
+            dist/*OFFLINE-USB*.zip
             backend/data/release_attestation.json
             release-version.json
           if-no-files-found: error
+
+      - name: Git tag ve GitHub Release yayınla
+        if: env.GOKDOGAN_RELEASE_TAG != ''
+        shell: pwsh
+        run: |
+          $tag = $env:GOKDOGAN_RELEASE_TAG
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          git fetch --tags --force
+          $exists = git tag --list $tag
+          if (-not $exists) {
+            git tag -a $tag -m "Gökdoğan Intelligence $tag"
+            git push origin "refs/tags/$tag"
+          }
+
+          $assets = New-Object System.Collections.Generic.List[string]
+          $installer = Get-ChildItem dist/windows -Recurse -File | Where-Object { $_.Extension -in @('.exe', '.msi') } | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+          if ($installer) { $assets.Add($installer.FullName) }
+
+          Get-ChildItem dist -File -ErrorAction SilentlyContinue | Where-Object {
+            $_.Name -like '*Windows*Bundle*.zip' -or $_.Name -like '*OFFLINE-USB*.zip'
+          } | ForEach-Object { $assets.Add($_.FullName) }
+
+          $sha = Join-Path $env:GITHUB_WORKSPACE 'dist/windows/SHA256-ARTIFACTS.txt'
+          if (Test-Path $sha) { $assets.Add($sha) }
+
+          $attestation = Join-Path $env:GITHUB_WORKSPACE 'backend/data/release_attestation.json'
+          if (Test-Path $attestation) { $assets.Add($attestation) }
+
+          $version = Join-Path $env:GITHUB_WORKSPACE 'release-version.json'
+          if (Test-Path $version) { $assets.Add($version) }
+
+          if ($assets.Count -eq 0) { throw 'GitHub Release için yayın varlığı bulunamadı.' }
+
+          $repo = $env:GITHUB_REPOSITORY
+          $existing = $false
+          gh release view $tag --repo $repo *> $null
+          if ($LASTEXITCODE -eq 0) { $existing = $true }
+
+          if ($existing) {
+            gh release upload $tag @assets --clobber --repo $repo
+          } else {
+            if ($tag -eq 'v1.0.0' -and (Test-Path 'docs/GITHUB-YAYIN-NOTU.md')) {
+              gh release create $tag @assets --repo $repo --title "Gökdoğan Intelligence $tag — İlk Resmî Sürüm" --notes-file 'docs/GITHUB-YAYIN-NOTU.md'
+            } else {
+              gh release create $tag @assets --repo $repo --title "Gökdoğan Intelligence $tag" --generate-notes
+            }
+          }
