@@ -114,12 +114,38 @@ jobs:
           Remove-Item -LiteralPath $pfx -Force
 
       - name: Masaüstü derleme
-        shell: cmd
+        shell: pwsh
         env:
           SB_NO_PAUSE: "1"
           SHADOWBROKER_NO_FINAL_PAUSE: "1"
           GOKDOGAN_LIVE_DATA: "false"
-        run: WINDOWS-DESKTOP-ONE-CLICK.bat
+        run: |
+          $log = Join-Path $env:GITHUB_WORKSPACE 'windows-desktop-build.log'
+          & cmd.exe /d /c "call WINDOWS-DESKTOP-ONE-CLICK.bat" 2>&1 | Tee-Object -FilePath $log
+          $code = $LASTEXITCODE
+          if ($null -eq $code) { $code = 1 }
+          Add-Content -Path $env:GITHUB_ENV -Value "GOKDOGAN_BUILD_EXIT_CODE=$code"
+          Write-Host "Windows masaüstü derleme çıkış kodu: $code"
+
+      - name: Derleme tanılama günlüğünü yükle
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: gokdogan-windows-build-diagnostics
+          path: windows-desktop-build.log
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Masaüstü derleme sonucunu doğrula
+        shell: pwsh
+        run: |
+          $code = 1
+          if ($env:GOKDOGAN_BUILD_EXIT_CODE -match '^\d+$') {
+            $code = [int]$env:GOKDOGAN_BUILD_EXIT_CODE
+          }
+          if ($code -ne 0) {
+            throw "Windows masaüstü derlemesi başarısız oldu (çıkış kodu: $code). Tanılama artifact'i: gokdogan-windows-build-diagnostics"
+          }
 
       - name: Artifact bütünlük özeti
         shell: pwsh
