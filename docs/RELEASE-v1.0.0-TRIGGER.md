@@ -2,16 +2,17 @@
 
 Bu dosya ilk resmî `v1.0.0` Windows release workflow'unu tetiklemek için kullanılır.
 
-## Deneme 5
+## Deneme 6
 
-Windows release workflow'una kalıcı derleme tanılama günlüğü eklendi. Masaüstü derlemesi başarısız olursa konsol çıktısı `gokdogan-windows-build-diagnostics` artifact'i olarak saklanır ve gerçek hata yayın kapısı kapanmadan incelenebilir.
+Tanılama sırasında builder'ın kendi `windows-desktop-build.log` transcript'i ile workflow'un `Tee-Object` çıktısının aynı dosyaya yazdığı ve Python kontrolünü erken kesebildiği görüldü. Workflow tekrar doğrudan `cmd` üzerinden builder'ı çalıştırıyor; başarısızlık halinde builder'ın kendi transcript'i ve `build-reports` içeriği ayrı diagnostic artifact olarak korunuyor.
 
 Önceki yayın denemelerinde CI/release ortamına ait sorunlar giderildi:
 
 1. Windows konsolu UTF-8'e geçirildi.
 2. Backend test bağımlılıkları kilitli `uv` ortamından kuruluyor.
 3. v1.0.0 GitHub görsel sözleşmesi gerçek yayın dosya adlarıyla hizalandı (`02-kuresel-operasyon-gorunumu.png`).
-4. Başarısız masaüstü derlemelerinde tam konsol günlüğü artifact olarak korunuyor.
+4. Başarısız masaüstü derlemelerinde builder transcript'i ve tanılama raporları artifact olarak korunuyor.
+5. Workflow ile builder arasında aynı log dosyasına eşzamanlı yazma kaldırıldı.
 
 Yayın kapıları başarılı olduğunda GitHub Actions:
 
