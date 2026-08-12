@@ -1,0 +1,70 @@
+name: Hata bildirimi
+description: Tekrar üretilebilir bir Gökdoğan Intelligence hatası bildirin
+title: "[HATA] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Teşekkürler. Lütfen API anahtarı, token, parola veya kişisel veri paylaşmayın.
+  - type: input
+    id: version
+    attributes:
+      label: Sürüm
+      description: Örn. v1.0.0
+      placeholder: v1.0.0
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Sorun alanı
+      options:
+        - Windows kurulum / START-HERE
+        - Masaüstü runtime / managed backend
+        - Harita / katmanlar
+        - API anahtarları / entegrasyonlar
+        - Havacılık
+        - Denizcilik
+        - Kamu kameraları
+        - Haber / afet / hava / trafik
+        - Arayüz / Türkçeleştirme
+        - Diğer
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Sorunun açıklaması
+      description: Ne oldu, ne olmasını bekliyordunuz?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Tekrar üretme adımları
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log / hata çıktısı
+      description: Gizli bilgileri silerek ilgili kısa log bölümünü ekleyin.
+      render: shell
+  - type: textarea
+    id: environment
+    attributes:
+      label: Sistem bilgisi
+      description: Windows sürümü, donanım ve ilgili sağlayıcı bilgisi.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Kontrol
+      options:
+        - label: Gizli API anahtarı, parola veya token paylaşmadım.
+          required: true
+        - label: Aynı sorunun açık Issues bölümünde bulunup bulunmadığını kontrol ettim.
+          required: true

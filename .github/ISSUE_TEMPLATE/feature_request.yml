@@ -1,0 +1,48 @@
+name: Özellik isteği
+description: Yeni veya geliştirilmiş bir Gökdoğan Intelligence yeteneği önerin
+title: "[ÖNERİ] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Çözülmek istenen ihtiyaç
+      description: Hangi kullanıcı problemini çözüyor?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Önerilen çözüm
+      description: Özelliğin nasıl çalışmasını bekliyorsunuz?
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Veri kaynağı / API / referans
+      description: Varsa resmi veri kaynağı, lisans ve API dokümantasyonu bağlantılarını belirtin.
+  - type: dropdown
+    id: category
+    attributes:
+      label: Kategori
+      options:
+        - Harita ve görselleştirme
+        - Havacılık
+        - Denizcilik
+        - Afet / meteoroloji
+        - Trafik / sınır / altyapı
+        - Haber / diplomasi
+        - Kamu kamera kaynakları
+        - API / veri entegrasyonu
+        - Performans / kararlılık
+        - Dokümantasyon
+        - Diğer
+  - type: checkboxes
+    id: responsible
+    attributes:
+      label: Sorumlu kullanım
+      options:
+        - label: Öneri kamuya açık veya kullanım yetkisi bulunan veri kaynaklarıyla uyumludur.
+          required: true
+        - label: Öneri erişim kontrolü aşma, özel kamera keşfi veya hassas hedefleme istemiyor.
+          required: true
