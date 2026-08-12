@@ -2,17 +2,11 @@
 
 Bu dosya ilk resmî `v1.0.0` Windows release workflow'unu tetiklemek için kullanılır.
 
-## Deneme 6
+## Deneme 7
 
-Tanılama sırasında builder'ın kendi `windows-desktop-build.log` transcript'i ile workflow'un `Tee-Object` çıktısının aynı dosyaya yazdığı ve Python kontrolünü erken kesebildiği görüldü. Workflow tekrar doğrudan `cmd` üzerinden builder'ı çalıştırıyor; başarısızlık halinde builder'ın kendi transcript'i ve `build-reports` içeriği ayrı diagnostic artifact olarak korunuyor.
+Deneme 6'da sürüm sözleşmesi, kilitli bağımlılık kontrolleri, backend release testleri, npm audit kapıları, taşınabilir Python hazırlığı ve Rust/Tauri testleri geçti. Başarısızlık yalnız `npm --prefix desktop-shell run build:desktop:clean` alt derlemesinde kaldı; alt PowerShell sürecinin ayrıntılı stdout/stderr çıktısı üst transcript'e taşınmadığı için gerçek Tauri/NSIS hata satırı kayboluyordu.
 
-Önceki yayın denemelerinde CI/release ortamına ait sorunlar giderildi:
-
-1. Windows konsolu UTF-8'e geçirildi.
-2. Backend test bağımlılıkları kilitli `uv` ortamından kuruluyor.
-3. v1.0.0 GitHub görsel sözleşmesi gerçek yayın dosya adlarıyla hizalandı (`02-kuresel-operasyon-gorunumu.png`).
-4. Başarısız masaüstü derlemelerinde builder transcript'i ve tanılama raporları artifact olarak korunuyor.
-5. Workflow ile builder arasında aynı log dosyasına eşzamanlı yazma kaldırıldı.
+Bu denemede `desktop-shell/scripts/run-desktop-build.cjs`, alt derleme çıktısını hem canlı terminale hem `build-reports/desktop-build-inner.log` dosyasına kaydediyor. Böylece paketleme hatası varsa doğrudan tanılanabilir; başarılı olursa normal v1.0.0 yayın zinciri devam eder.
 
 Yayın kapıları başarılı olduğunda GitHub Actions:
 
