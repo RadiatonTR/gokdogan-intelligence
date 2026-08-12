@@ -1,12 +1,16 @@
 # Gökdoğan Intelligence
 
+**Türkçe** | [English](README.en.md)
+
 [![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsors-EA4AAA?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/RadiatonTR)
 
 **Türkçe, harita tabanlı açık kaynak OSINT ve küresel durum farkındalığı masaüstü platformu.**
 
+**Open-source, map-based OSINT and global situational-awareness desktop platform.** Global repository/community documentation is available in [English](README.en.md).
+
 Gökdoğan Intelligence; kamuya açık veya operatörün kullanım yetkisine sahip olduğu veri kaynaklarını tek bir Windows masaüstü çalışma alanında birleştirir. Amaç; farklı web sayfaları, API panelleri ve harita servisleri arasında sürekli geçiş yapmak yerine kaynakların durumunu, harita katmanlarını, olayları ve bağlantılı ayrıntıları tek arayüzde izleyebilmektir.
 
-**Sürüm:** `v1.0.0` · **Teknik çekirdek:** `R24 / 0.10.3` · **Platform:** Windows 10/11 x64 · **Varsayılan dil:** Türkçe · **Lisans:** AGPL-3.0
+**Sürüm:** `v1.0.0` · **Teknik çekirdek:** `R24 / 0.10.3` · **Platform:** Windows 10/11 x64 · **Varsayılan masaüstü dili:** Türkçe · **Repository/topluluk:** Türkçe + İngilizce · **Lisans:** AGPL-3.0
 
 > [!IMPORTANT]
 > Gökdoğan Intelligence bir erişim kontrolü aşma aracı değildir. Yalnız kamuya açık veya kullanım yetkinizin bulunduğu kaynaklarla çalıştırılmalıdır. Özel/kapalı kameralar, yetkisiz sistemler, gizli kimlik bilgileri, kişi hedefli izleme veya hassas askerî hedefleme bu kamu sürümünün amacı değildir.
@@ -16,10 +20,14 @@ Gökdoğan Intelligence; kamuya açık veya operatörün kullanım yetkisine sah
 - Kaynak kodu: yayımlandı
 - GitHub Sponsors: aktif
 - CI ve Windows release workflow: mevcut
-- İlk resmî sürüm: `v1.0.0` yayın hazırlığı tamamlanıyor
+- İlk resmî sürüm hattı: `v1.0.0`
+- Global repository/topluluk dokümantasyonu: İngilizce destek mevcut
+- Masaüstü arayüzü: Türkçe öncelikli; yeni kullanıcı metinlerinin gelecekteki İngilizce yerelleştirmeye uygun tutulması hedeflenir
 
 ## Dokümantasyon
 
+- [English README](README.en.md)
+- [English documentation index](docs/en/README.md)
 - [Kurulum](docs/KURULUM.md)
 - [Kullanım Kılavuzu](docs/KULLANIM-KILAVUZU.md)
 - [Veri Kaynakları ve API](docs/VERI-KAYNAKLARI-VE-API.md)
@@ -27,11 +35,12 @@ Gökdoğan Intelligence; kamuya açık veya operatörün kullanım yetkisine sah
 - [Ekran Görüntüleri](docs/EKRAN-GORUNTULERI.md)
 - [Sorun Giderme](docs/SORUN-GIDERME.md)
 - [Yasal Uyarı ve Sorumlu Kullanım](docs/YASAL-UYARI-VE-SORUMLU-KULLANIM.md)
-- [Katkı Rehberi](CONTRIBUTING.md)
-- [Davranış Kuralları](CODE_OF_CONDUCT.md)
-- [Güvenlik Politikası](SECURITY.md)
-- [Destek / Donate](SUPPORT.md)
+- [Katkı Rehberi](CONTRIBUTING.md) / [Contributing](CONTRIBUTING.en.md)
+- [Davranış Kuralları](CODE_OF_CONDUCT.md) / [Code of Conduct](CODE_OF_CONDUCT.en.md)
+- [Güvenlik Politikası](SECURITY.md) / [Security Policy](SECURITY.en.md)
+- [Destek / Donate](SUPPORT.md) / [Support](SUPPORT.en.md)
 - [Sponsor Hedefleri](docs/SPONSOR-HEDEFLERI.md)
+- [GitHub Main Branch Ruleset](docs/GITHUB-BRANCH-RULESET.md)
 
 ## Başlıca yetenekler
 
@@ -160,7 +169,7 @@ Her sağlayıcının kendi lisansı, kotası, bölgesel kapsamı ve kullanım ko
 - Kamu kamera kaynaklarını sağlayıcı lisans ve mahremiyet koşullarına göre kullanın.
 - Hassas kişi/konum takibi veya operasyonel hedefleme amacıyla kullanmayın.
 - Güvenlik açıklarını herkese açık Issue olarak paylaşmayın.
-- Katkı göndermeden önce [`CONTRIBUTING.md`](CONTRIBUTING.md) dosyasını okuyun.
+- Katkı göndermeden önce [`CONTRIBUTING.md`](CONTRIBUTING.md) veya [`CONTRIBUTING.en.md`](CONTRIBUTING.en.md) dosyasını okuyun.
 
 ## ❤️ Projeyi destekleyin
 
@@ -177,8 +186,9 @@ Destekler özellikle şu alanlara katkı sağlar:
 - harita ve performans geliştirmeleri
 - kamuya açık/yetkili veri kaynağı entegrasyonları
 - güvenlik ve bağımlılık güncellemeleri
-- dokümantasyon ve sürdürülebilir bakım
+- Türkçe ve İngilizce dokümantasyon
+- sürdürülebilir bakım
 
-Ayrıntılar: [`SUPPORT.md`](SUPPORT.md)
+Ayrıntılar: [`SUPPORT.md`](SUPPORT.md) / [`SUPPORT.en.md`](SUPPORT.en.md)
 
 > Sponsorluk herhangi bir özel, gizli, erişim kontrollü veya normalde erişilemeyen veri kaynağına erişim hakkı sağlamaz.

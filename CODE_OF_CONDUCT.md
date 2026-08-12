@@ -1,5 +1,7 @@
 # Davranış Kuralları
 
+**Türkçe** | [English](CODE_OF_CONDUCT.en.md)
+
 Gökdoğan Intelligence topluluğunda teknik yeterlilik kadar saygılı ve güvenli iletişim de önemlidir.
 
 ## Beklenen davranışlar

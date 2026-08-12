@@ -1,5 +1,7 @@
 # Gökdoğan Intelligence'a Katkı Rehberi
 
+**Türkçe** | [English](CONTRIBUTING.en.md)
+
 Gökdoğan Intelligence'a katkıda bulunmak istediğiniz için teşekkürler.
 
 Bu proje; kamuya açık veya kullanım yetkisi bulunan OSINT/veri kaynaklarını Türkçe, harita tabanlı bir masaüstü çalışma alanında birleştirmeyi amaçlar. Katkıların güvenli, sürdürülebilir ve geriye dönük uyumlu olması beklenir.
@@ -13,7 +15,7 @@ Bu proje; kamuya açık veya kullanım yetkisi bulunan OSINT/veri kaynaklarını
 
 ## Geliştirme ilkeleri
 
-- Kullanıcıya görünen yeni metinler Türkçe olmalıdır.
+- Kullanıcıya görünen yeni metinler yerelleştirmeye uygun tutulmalıdır. Masaüstünde Türkçe varsayılan dil korunurken global kullanıcıya yönelik bileşenlerde uygulanabildiği ölçüde İngilizce karşılık sağlanmalıdır.
 - Kamuya açık veya yetkili veri kaynakları kullanılmalıdır.
 - Erişim kontrolü aşma, parola kırma, kapalı kamera keşfi veya hassas kişi/hedef takibi eklenmemelidir.
 - Yeni sağlayıcılarda lisans, atıf, kota ve API anahtarı gereksinimi belgelenmelidir.
@@ -38,7 +40,8 @@ Mümkün olduğunda:
 - frontend lint/typecheck/test kapılarını çalıştırın,
 - Rust/Tauri testlerini çalıştırın,
 - yeni JSON/YAML yapılandırmalarının geçerli olduğunu doğrulayın,
-- yeni veri sağlayıcısı ekliyorsanız `DATA-ATTRIBUTION.md` ve ilgili dokümantasyonu güncelleyin.
+- yeni veri sağlayıcısı ekliyorsanız `DATA-ATTRIBUTION.md` ve ilgili dokümantasyonu güncelleyin,
+- kullanıcıya görünen yeni davranışlar için Türkçe ve uygulanabildiği ölçüde İngilizce dokümantasyonu güncelleyin.
 
 ## Commit mesajları
 

@@ -1,5 +1,7 @@
 # ❤️ Gökdoğan Intelligence'ı Destekleyin
 
+**Türkçe** | [English](SUPPORT.en.md)
+
 Gökdoğan Intelligence ücretsiz ve açık kaynak olarak geliştirilmektedir.
 
 Projeyi faydalı buluyorsanız; geliştirme, Windows dağıtımları, test altyapısı, güvenlik güncellemeleri, dokümantasyon, harita performansı ve kamuya açık/yetkili veri kaynağı entegrasyonlarının sürdürülebilir biçimde devam etmesine destek olabilirsiniz.
@@ -31,7 +33,7 @@ Sponsor desteği özellikle şu alanlarda kullanılacaktır:
 - kamuya açık/yetkili yeni veri kaynağı entegrasyonları,
 - harita, önbellek ve canlı veri performansı geliştirmeleri,
 - API sağlayıcıları ve entegrasyon testleri,
-- Türkçe dokümantasyon ve kullanım kılavuzları,
+- Türkçe ve İngilizce dokümantasyon ve kullanım rehberleri,
 - uzun vadeli proje bakımı.
 
 > Sponsorluk; herhangi bir özel, gizli, erişim kontrollü veya normalde erişilemeyen veri kaynağına erişim hakkı sağlamaz.
@@ -98,7 +100,7 @@ Tek seferlik destekler de aylık sponsorluklarla aynı proje geliştirme ve bak�
 5. **Güvenlik ve bağımlılık güncellemeleri**
 6. **Kamuya açık / yetkili veri kaynağı entegrasyonları**
 7. **Harita ve canlı veri performansı**
-8. **Türkçe dokümantasyon ve kullanım rehberleri**
+8. **Türkçe ve İngilizce dokümantasyon ve kullanım rehberleri**
 9. **Uzun vadeli bakım ve sürdürülebilirlik**
 
 ---

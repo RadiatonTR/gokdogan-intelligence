@@ -1,5 +1,7 @@
 # Güvenlik Politikası — Gökdoğan Intelligence
 
+**Türkçe** | [English](SECURITY.en.md)
+
 ## Desteklenen sürümler
 
 Aktif olarak desteklenen kamu sürümü `v1.x` serisidir. Güvenlik düzeltmeleri mümkün olduğunda en güncel kararlı sürüme uygulanır.

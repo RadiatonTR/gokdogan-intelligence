@@ -1,47 +1,56 @@
-name: Hata bildirimi
-description: Tekrar üretilebilir bir Gökdoğan Intelligence hatası bildirin
-title: "[HATA] "
+name: Hata bildirimi / Bug report
+description: Tekrar üretilebilir bir Gökdoğan Intelligence hatası bildirin / Report a reproducible Gökdoğan Intelligence bug
+title: "[BUG/HATA] "
 body:
   - type: markdown
     attributes:
       value: |
-        Teşekkürler. Lütfen API anahtarı, token, parola veya kişisel veri paylaşmayın.
+        Teşekkürler / Thank you. Lütfen API anahtarı, token, parola veya kişisel veri paylaşmayın. Do not share API keys, tokens, passwords or personal data.
+  - type: dropdown
+    id: language
+    attributes:
+      label: Dil / Language
+      options:
+        - Türkçe
+        - English
+    validations:
+      required: true
   - type: input
     id: version
     attributes:
-      label: Sürüm
-      description: Örn. v1.0.0
+      label: Sürüm / Version
+      description: Örn. / e.g. v1.0.0
       placeholder: v1.0.0
     validations:
       required: true
   - type: dropdown
     id: area
     attributes:
-      label: Sorun alanı
+      label: Sorun alanı / Area
       options:
-        - Windows kurulum / START-HERE
-        - Masaüstü runtime / managed backend
-        - Harita / katmanlar
-        - API anahtarları / entegrasyonlar
-        - Havacılık
-        - Denizcilik
-        - Kamu kameraları
-        - Haber / afet / hava / trafik
-        - Arayüz / Türkçeleştirme
-        - Diğer
+        - Windows kurulum / Windows installation
+        - Masaüstü runtime / Desktop runtime
+        - Harita / Map and layers
+        - API anahtarları / API keys and integrations
+        - Havacılık / Aviation
+        - Denizcilik / Maritime
+        - Kamu kameraları / Public camera sources
+        - Haber-afet-hava-trafik / News-disaster-weather-traffic
+        - Arayüz-yerelleştirme / UI-localization
+        - Diğer / Other
     validations:
       required: true
   - type: textarea
     id: description
     attributes:
-      label: Sorunun açıklaması
-      description: Ne oldu, ne olmasını bekliyordunuz?
+      label: Sorunun açıklaması / Description
+      description: Ne oldu, ne olmasını bekliyordunuz? / What happened and what did you expect?
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
-      label: Tekrar üretme adımları
+      label: Tekrar üretme adımları / Steps to reproduce
       placeholder: |
         1. ...
         2. ...
@@ -51,20 +60,20 @@ body:
   - type: textarea
     id: logs
     attributes:
-      label: Log / hata çıktısı
-      description: Gizli bilgileri silerek ilgili kısa log bölümünü ekleyin.
+      label: Log / hata çıktısı / Error output
+      description: Gizli bilgileri silerek ilgili kısa log bölümünü ekleyin. / Remove secrets before pasting a short relevant log section.
       render: shell
   - type: textarea
     id: environment
     attributes:
-      label: Sistem bilgisi
-      description: Windows sürümü, donanım ve ilgili sağlayıcı bilgisi.
+      label: Sistem bilgisi / Environment
+      description: Windows sürümü, donanım ve ilgili sağlayıcı bilgisi. / Windows version, hardware and relevant provider information.
   - type: checkboxes
     id: checks
     attributes:
-      label: Kontrol
+      label: Kontrol / Checklist
       options:
-        - label: Gizli API anahtarı, parola veya token paylaşmadım.
+        - label: Gizli API anahtarı, parola veya token paylaşmadım. / I did not include secrets, passwords, tokens or API keys.
           required: true
-        - label: Aynı sorunun açık Issues bölümünde bulunup bulunmadığını kontrol ettim.
+        - label: Açık Issues bölümünde aynı sorunu kontrol ettim. / I checked existing open Issues for duplicates.
           required: true

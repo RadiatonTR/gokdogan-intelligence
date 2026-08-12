@@ -1,48 +1,60 @@
-name: Özellik isteği
-description: Yeni veya geliştirilmiş bir Gökdoğan Intelligence yeteneği önerin
-title: "[ÖNERİ] "
+name: Özellik isteği / Feature request
+description: Yeni veya geliştirilmiş bir Gökdoğan Intelligence yeteneği önerin / Suggest a new or improved capability
+title: "[FEATURE/ÖNERİ] "
 body:
+  - type: dropdown
+    id: language
+    attributes:
+      label: Dil / Language
+      options:
+        - Türkçe
+        - English
+    validations:
+      required: true
   - type: textarea
     id: problem
     attributes:
-      label: Çözülmek istenen ihtiyaç
-      description: Hangi kullanıcı problemini çözüyor?
+      label: Çözülmek istenen ihtiyaç / Problem to solve
+      description: Hangi kullanıcı problemini çözüyor? / What user problem does this solve?
     validations:
       required: true
   - type: textarea
     id: proposal
     attributes:
-      label: Önerilen çözüm
-      description: Özelliğin nasıl çalışmasını bekliyorsunuz?
+      label: Önerilen çözüm / Proposed solution
+      description: Özelliğin nasıl çalışmasını bekliyorsunuz? / How should the feature work?
     validations:
       required: true
   - type: textarea
     id: sources
     attributes:
-      label: Veri kaynağı / API / referans
-      description: Varsa resmi veri kaynağı, lisans ve API dokümantasyonu bağlantılarını belirtin.
+      label: Veri kaynağı-API-referans / Data source-API-reference
+      description: Varsa resmi veri kaynağı, lisans ve API dokümantasyonu bağlantılarını belirtin. / Include official source, license and API documentation when relevant.
   - type: dropdown
     id: category
     attributes:
-      label: Kategori
+      label: Kategori / Category
       options:
-        - Harita ve görselleştirme
-        - Havacılık
-        - Denizcilik
-        - Afet / meteoroloji
-        - Trafik / sınır / altyapı
-        - Haber / diplomasi
-        - Kamu kamera kaynakları
-        - API / veri entegrasyonu
-        - Performans / kararlılık
-        - Dokümantasyon
-        - Diğer
+        - Harita ve görselleştirme / Map and visualization
+        - Havacılık / Aviation
+        - Denizcilik / Maritime
+        - Afet-meteoroloji / Disaster-weather
+        - Trafik-sınır-altyapı / Traffic-border-infrastructure
+        - Haber-diplomasi / News-diplomacy
+        - Kamu kamera kaynakları / Public camera sources
+        - API-veri entegrasyonu / API-data integration
+        - Performans-kararlılık / Performance-stability
+        - Yerelleştirme / Localization
+        - Dokümantasyon / Documentation
+        - Diğer / Other
+    validations:
+      required: true
   - type: checkboxes
     id: responsible
     attributes:
-      label: Sorumlu kullanım
+      label: Sorumlu kullanım / Responsible use
       options:
-        - label: Öneri kamuya açık veya kullanım yetkisi bulunan veri kaynaklarıyla uyumludur.
+        - label: Öneri kamuya açık veya kullanım yetkisi bulunan veri kaynaklarıyla uyumludur. / The proposal uses public or properly authorized data sources.
           required: true
-        - label: Öneri erişim kontrolü aşma, özel kamera keşfi veya hassas hedefleme istemiyor.
+        - label: Öneri erişim kontrolü aşma, özel kamera keşfi veya hassas hedefleme istemiyor. / The proposal does not request access-control bypassing, private-camera discovery or sensitive targeting.
           required: true

@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Güvenlik açığı bildirimi
+  - name: Güvenlik açığı bildirimi / Security vulnerability
     url: https://github.com/RadiatonTR/gokdogan-intelligence/security
-    about: Güvenlik açıklarını herkese açık Issue olarak paylaşmayın.
+    about: Güvenlik açıklarını herkese açık Issue olarak paylaşmayın. / Do not disclose vulnerabilities in public Issues.
   - name: GitHub Sponsors
     url: https://github.com/sponsors/RadiatonTR
-    about: Gökdoğan Intelligence geliştirmesini destekleyin.
+    about: Gökdoğan Intelligence geliştirmesini destekleyin. / Support Gökdoğan Intelligence development.
