@@ -2,23 +2,13 @@
 
 Bu dosya ilk resmî `v1.0.0` Windows release workflow'unu tetiklemek için kullanılır.
 
-## Deneme 3
+## Deneme 4
 
-Önceki iki GitHub-hosted Windows denemesinde yayın zincirinin kendisine ait iki CI ortam sorunu tespit edilip giderildi:
+Önceki yayın denemelerinde CI/release ortamına ait sorunlar giderildi:
 
-1. Windows konsol encoding'i UTF-8'e zorlandı.
-2. Release testleri için `pytest` dahil backend geliştirme/test bağımlılıkları repo'nun kilitli `uv` ortamından kurulacak şekilde düzenlendi.
-
-Bu denemede:
-
-- `PYTHONUTF8=1`
-- `PYTHONIOENCODING=utf-8`
-- `astral-sh/setup-uv@v7`
-- `uv sync --frozen --group dev`
-- `uv run pytest ...`
-- Node 24 tabanlı güncel GitHub Actions v7
-
-kullanılır.
+1. Windows konsolu UTF-8'e geçirildi.
+2. Backend test bağımlılıkları kilitli `uv` ortamından kuruluyor.
+3. v1.0.0 GitHub görsel sözleşmesi gerçek yayın dosya adlarıyla hizalandı (`02-kuresel-operasyon-gorunumu.png`).
 
 Yayın kapıları başarılı olduğunda GitHub Actions:
 
