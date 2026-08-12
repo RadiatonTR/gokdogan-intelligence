@@ -106,8 +106,18 @@ if [[ -n "$TEXT_FILES" ]]; then
         REAL_REPORT=""
         while IFS= read -r f; do
             [[ -z "$f" ]] && continue
-            # Re-grep this file, but filter out known_hosts-style lines.
+            # Re-grep this file, but filter known-safe public/fixture lines only.
             FILE_HITS=$(grep -nE "$SECRET_REGEX" "$f" 2>/dev/null | grep -vE "$KNOWN_HOSTS_LINE" || true)
+
+            # These two source lines intentionally contain the private-key marker
+            # as scanner/test data. Exclude only those exact fixture definitions;
+            # any other secret-looking line in the same files must still fail.
+            if [[ "$f" == "backend/tests/test_r24_windows_release_gate.py" ]]; then
+                FILE_HITS=$(printf '%s\n' "$FILE_HITS" | grep -vF 'generated.write_text("-----BEGIN PRIVATE KEY-----' || true)
+            elif [[ "$f" == "scripts/check_source_secrets.py" ]]; then
+                FILE_HITS=$(printf '%s\n' "$FILE_HITS" | grep -vF 'PRIVATE_KEY = re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----")' || true)
+            fi
+
             if [[ -n "$FILE_HITS" ]]; then
                 REAL_HITS+="$f"$'\n'
                 REAL_REPORT+="  ${RED}$f${NC}"$'\n'
