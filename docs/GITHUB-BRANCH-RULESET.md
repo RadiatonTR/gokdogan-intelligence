@@ -39,12 +39,12 @@ For the current single-maintainer phase:
 
 - Required approving reviews: `0`
 - Dismiss stale reviews on push: optional / not required while approval count is zero
-- Require Code Owner review: disabled
+- Require Code Owner review: disabled while the project has a single maintainer
 - Require approval of the most recent reviewable push: disabled
 - Require conversation resolution: enabled
 - Allowed merge methods: Squash and Rebase
 
-This keeps the audit trail and CI protections without locking the sole maintainer out of the repository. If more maintainers join later, raise required approvals to `1` and consider CODEOWNERS.
+The repository already contains `.github/CODEOWNERS` so ownership of critical release, security, backend, frontend and desktop-shell paths is explicit. Keeping the Code Owner *approval requirement* disabled during the single-maintainer phase avoids locking the owner out while still documenting ownership. When additional maintainers join, raise required approvals to `1` and enable Code Owner review where appropriate.
 
 ### Bypass / Atlatma
 
@@ -68,7 +68,7 @@ The repository contains a prepared ruleset definition at:
 
 `.github/rulesets/main-protection.json`
 
-If GitHub offers **Import a ruleset**, use that file and review the values before activating it.
+If GitHub offers **Import a ruleset**, use that file and review the values before activating it. Merely committing the JSON file does **not** activate GitHub branch protection; the ruleset must be created/imported in repository settings and set to **Active**.
 
 ## After activation / Etkinleştirme sonrası
 
