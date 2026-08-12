@@ -30,7 +30,7 @@ Gökdoğan Intelligence; kamuya açık veya operatörün kullanım yetkisine sah
 
 Gökdoğan Intelligence aşağıdaki çalışma senaryoları için tasarlanmıştır:
 
-- kamuya açık kaynaklardan **durum farkındalığı** oluşturmak,
+- kamuya açık kaynaklardan **durum farkındalığı, İstihbarat** oluşturmak,
 - farklı veri sağlayıcılarını tek harita ve panel düzeninde karşılaştırmak,
 - sivil/ticari hava ve deniz hareketlerini, olayları ve kaynak sağlığını izlemek,
 - doğal afet, meteoroloji, trafik, haber, diplomasi ve piyasa sinyallerini aynı çalışma alanında görmek,
