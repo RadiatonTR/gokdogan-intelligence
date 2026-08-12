@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+title: Gökdoğan Intelligence
+message: "Gökdoğan Intelligence'ı araştırma, eğitim veya teknik çalışmanızda kullanıyorsanız bu yazılıma atıf vermeniz memnuniyetle karşılanır."
+type: software
+authors:
+  - alias: RadiatonTR
+    website: "https://github.com/RadiatonTR"
+repository-code: "https://github.com/RadiatonTR/gokdogan-intelligence"
+url: "https://github.com/RadiatonTR/gokdogan-intelligence"
+version: 1.0.0
+date-released: 2026-08-12
+license: AGPL-3.0-only
+keywords:
+  - osint
+  - situational-awareness
+  - geospatial
+  - tauri
+  - fastapi
+  - maplibre
+  - turkish
