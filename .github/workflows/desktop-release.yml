@@ -29,12 +29,14 @@ jobs:
       GOKDOGAN_WINDOWS_CERT_PFX_B64: ${{ secrets.GOKDOGAN_WINDOWS_CERT_PFX_B64 }}
       GOKDOGAN_WINDOWS_CERT_PASSWORD: ${{ secrets.GOKDOGAN_WINDOWS_CERT_PASSWORD }}
       GH_TOKEN: ${{ github.token }}
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: "utf-8"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24.19.0
           cache: npm
@@ -43,7 +45,7 @@ jobs:
             frontend/package-lock.json
             desktop-shell/package-lock.json
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -129,7 +131,7 @@ jobs:
           if (Test-Path $path) { Remove-Item -LiteralPath $path -Force }
 
       - name: Windows artifact'lerini yükle
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gokdogan-intelligence-windows
           path: |
