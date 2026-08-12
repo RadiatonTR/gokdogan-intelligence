@@ -2,7 +2,7 @@
 
 [![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsors-EA4AAA?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/RadiatonTR)
 
-**Türkçe, harita tabanlı açık kaynak OSINT ve küresel durum farkındalığı masaüstü platformu.**
+**Türkçe, harita tabanlı açık kaynak OSINT ve küresel durum farkındalığı, İstihbarat masaüstü platformu.**
 
 Gökdoğan Intelligence; kamuya açık veya operatörün kullanım yetkisine sahip olduğu veri kaynaklarını tek bir Windows masaüstü çalışma alanında birleştirir. Amaç; farklı web sayfaları, API panelleri ve harita servisleri arasında sürekli geçiş yapmak yerine, kaynakların durumunu, harita katmanlarını, olayları ve bağlantılı ayrıntıları tek arayüzde izleyebilmektir.
 
