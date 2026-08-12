@@ -1,0 +1,23 @@
+# Gökdoğan Intelligence code ownership
+# Kritik yayın, güvenlik ve çalışma zamanı değişiklikleri proje sahibi tarafından gözden geçirilir.
+
+* @RadiatonTR
+
+# GitHub / CI / release
+/.github/ @RadiatonTR
+/scripts/ @RadiatonTR
+/release-version.json @RadiatonTR
+/WINDOWS-DESKTOP-ONE-CLICK.bat @RadiatonTR
+/WINDOWS-DESKTOP-ONE-CLICK.ps1 @RadiatonTR
+
+# Runtime / API / desktop shell
+/backend/ @RadiatonTR
+/frontend/ @RadiatonTR
+/desktop-shell/ @RadiatonTR
+
+# Security, privacy and responsible-use contract
+/SECURITY.md @RadiatonTR
+/PRIVACY.md @RadiatonTR
+/RESPONSIBLE-USE.md @RadiatonTR
+/DATA-ATTRIBUTION.md @RadiatonTR
+/LICENSE @RadiatonTR
