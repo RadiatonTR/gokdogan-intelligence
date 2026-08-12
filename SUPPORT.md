@@ -10,15 +10,19 @@ Projeyi faydalı buluyorsanız; geliştirme, Windows dağıtımları, test altya
 
 [❤️ GitHub Sponsors ile Destekle](https://github.com/sponsors/RadiatonTR)
 
-Repository üzerindeki **Sponsor** butonu `.github/FUNDING.yml` üzerinden doğrudan bu hesaba bağlıdır.
+Repository üzerindeki **Sponsor** butonu `.github/FUNDING.yml` üzerinden doğrudan `RadiatonTR` GitHub Sponsors hesabına bağlıdır.
+
+---
 
 ## 🎯 İlk sponsorluk hedefi
 
-### 10 aylık Gökdoğan Intelligence destekçisi
+### 10 düzenli aylık Gökdoğan Intelligence destekçisi
 
 İlk hedefimiz **10 düzenli aylık sponsora** ulaşmaktır.
 
-Bu hedef; Gökdoğan Intelligence'ın ilk resmî sürümünden sonraki bakım çalışmalarını sürdürülebilir hâle getirmeye yardımcı olacaktır. Sponsor desteği özellikle aşağıdaki alanlarda kullanılacaktır:
+Bu hedef; Gökdoğan Intelligence'ın ilk resmî sürümünden sonraki bakım ve geliştirme çalışmalarını daha sürdürülebilir hâle getirmeyi amaçlar.
+
+Sponsor desteği özellikle şu alanlarda kullanılacaktır:
 
 - Windows build ve release altyapısının sürdürülebilirliği,
 - code-signing / dağıtım giderleri,
@@ -30,79 +34,100 @@ Bu hedef; Gökdoğan Intelligence'ın ilk resmî sürümünden sonraki bakım ç
 - Türkçe dokümantasyon ve kullanım kılavuzları,
 - uzun vadeli proje bakımı.
 
-Sponsor olmak, herhangi bir özel/gizli kaynağa veya normalde erişilemeyen sisteme erişim hakkı sağlamaz.
+> Sponsorluk; herhangi bir özel, gizli, erişim kontrollü veya normalde erişilemeyen veri kaynağına erişim hakkı sağlamaz.
 
-## 💖 Önerilen sponsor kademeleri
+---
+
+## 💖 Aylık sponsor kademeleri
 
 ### ☕ $3 / ay — Kahve Desteği
 
 Gökdoğan Intelligence'ın geliştirilmesini desteklemek isteyen kullanıcılar için küçük ama değerli katkı.
 
-**Teşekkür avantajı:** Sponsor profilinde destekçi olarak görünme.
+**Teşekkür:** Sponsor profilinde destekçi olarak görünme.
 
 ### 🛰️ $5 / ay — Gökdoğan Destekçisi
 
 Hata düzeltmeleri, dokümantasyon ve düzenli bakım çalışmalarına katkı sağlar.
 
-**Teşekkür avantajı:** Sponsor teşekkür listesinde isim/kullanıcı adı gösterimi (isteğe bağlı).
+**Teşekkür:** Sponsor teşekkür listesinde isim/kullanıcı adı gösterimi (isteğe bağlı).
 
 ### 🌍 $10 / ay — Açık Kaynak Destekçisi
 
 Yeni kamu veri kaynakları, harita katmanları, performans iyileştirmeleri ve entegrasyon testlerine katkı sağlar.
 
-**Teşekkür avantajı:** Yol haritası ve sürüm planlarına ilişkin sponsor güncellemeleri.
+**Teşekkür:** Yol haritası ve sürüm planlarına ilişkin sponsor güncellemeleri.
 
 ### 🚀 $25 / ay — Proje Sponsoru
 
 Windows release altyapısı, test otomasyonu, güvenlik bakımı ve daha kapsamlı proje geliştirmelerine destek olur.
 
-**Teşekkür avantajı:** README / sponsor teşekkür alanında görünür destekçi kaydı (isteğe bağlı).
+**Teşekkür:** README / sponsor teşekkür alanında görünür destekçi kaydı (isteğe bağlı).
 
 ### ⭐ $50 / ay — Ana Destekçi
 
 Gökdoğan Intelligence'ın uzun vadeli açık kaynak geliştirilmesine güçlü katkı sağlar.
 
-**Teşekkür avantajı:** Ana destekçi olarak görünür teşekkür kaydı (isteğe bağlı) ve genel geliştirme yol haritası güncellemeleri.
+**Teşekkür:** Ana destekçi olarak görünür teşekkür kaydı (isteğe bağlı) ve genel geliştirme yol haritası güncellemeleri.
 
-## Tek seferlik destek
+---
 
-GitHub Sponsors profilinde tek seferlik destek kademeleri de açılabilir. Önerilen tutarlar:
+## 💝 Tek seferlik destek
+
+GitHub Sponsors profilinde tek seferlik destek seçeneği de açılabilir.
+
+Önerilen tutarlar:
 
 - **$3** — Kahve Desteği
 - **$10** — Projeye Destek
 - **$25** — Güçlü Destek
 - **$50** — Ana Destek
 
-## Desteklerin kullanım ilkeleri
+Tek seferlik destekler de aylık sponsorluklarla aynı proje geliştirme ve bakım alanlarında kullanılır.
 
-Sponsor gelirleri mümkün olduğunca aşağıdaki proje ihtiyaçlarına yönlendirilir:
+---
 
-1. geliştirme ve bakım,
-2. Windows release / code-signing,
-3. test ve kalite güvence,
-4. güvenlik güncellemeleri,
-5. veri sağlayıcı entegrasyonları,
-6. dokümantasyon,
-7. açık kaynak proje altyapısı.
+## 🧭 Sponsor destekleri hangi alanlarda kullanılır?
 
-## Şeffaflık ve sınırlar
+Öncelik sırası:
 
-Gökdoğan Intelligence'ın kamu sürümü yalnız **kamuya açık veya kullanım yetkinizin bulunduğu veri kaynakları** için geliştirilir.
+1. **Kararlılık ve hata düzeltmeleri**
+2. **Windows build / release altyapısı**
+3. **Code-signing ve dağıtım güvenliği**
+4. **Test ve kalite güvence otomasyonu**
+5. **Güvenlik ve bağımlılık güncellemeleri**
+6. **Kamuya açık / yetkili veri kaynağı entegrasyonları**
+7. **Harita ve canlı veri performansı**
+8. **Türkçe dokümantasyon ve kullanım rehberleri**
+9. **Uzun vadeli bakım ve sürdürülebilirlik**
 
-Sponsorluk:
+---
 
-- özel/kapalı kameralara erişim,
-- erişim kontrolü aşma,
-- gizli askerî veri,
-- hassas kişi/konum takibi,
-- normal kullanıcılara kapalı istihbarat yetenekleri
+## 🔐 Sponsorluk ve erişim politikası
 
-sağlamaz.
+Sponsor olmak aşağıdaki ayrıcalıkları **sağlamaz**:
 
-Sponsorların katkısı açık kaynak projenin sürdürülebilirliğini destekler; ayrıcalıklı hassas veri erişimi satın almaz.
+- özel veya kapalı kamera sistemlerine erişim,
+- erişim kontrolü aşılmış veri kaynaklarına erişim,
+- gizli askerî veya operasyonel veri,
+- kişi hedefli özel takip sistemleri,
+- normal kullanıcıların erişemediği gizli özellikler,
+- üçüncü taraf API lisanslarını veya kullanım koşullarını aşma hakkı.
 
-## Teşekkürler
+Gökdoğan Intelligence'ın kamu sürümü yalnız kamuya açık veya kullanım yetkinizin bulunduğu kaynaklarla çalıştırılmalıdır.
 
-Gökdoğan Intelligence'ı kullanan, hata bildiren, kod katkısı sağlayan, dokümantasyonu geliştiren ve sponsorluk yoluyla destekleyen herkese teşekkürler.
+---
 
-**GitHub Sponsors:** https://github.com/sponsors/RadiatonTR
+## 📊 Şeffaflık ilkesi
+
+Sponsor desteği proje geliştirme, bakım, güvenlik ve dağıtım giderlerine katkı sağlar. Sponsorluk tutarı, herhangi bir özellik için doğrudan satın alma veya hizmet garantisi anlamına gelmez.
+
+Sponsorların genel proje yol haritasına geri bildirim sunması teşvik edilir; ancak güvenlik, hukuk, lisans ve sorumlu kullanım sınırları her zaman önceliklidir.
+
+---
+
+## 🙏 Teşekkür
+
+Gökdoğan Intelligence'ın geliştirilmesine katkı sağlayan, hata raporlayan, dokümantasyona yardımcı olan ve projeyi sponsor olarak destekleyen herkese teşekkürler.
+
+[❤️ Gökdoğan Intelligence'ı GitHub Sponsors üzerinden destekle](https://github.com/sponsors/RadiatonTR)
